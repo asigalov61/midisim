@@ -2,7 +2,7 @@
 
 ***
 
-## Images were created with Stable Diffusion 3.5 Large image AI model
+## Images were created with Microsoft Copilot and Stable Diffusion 3.5 Large image AI models
 
 ***
 
