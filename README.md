@@ -21,10 +21,78 @@
 
 ***
 
-### Basic use example
+### General use example
 
 ```python
-...
+# Import main midisim module
+import midisim
+
+# Download sample pre-computed embeddings corpus
+emb_path = midisim.download_embeddings()
+
+# Load downloaded embeddings corpus
+corpus_midi_names, corpus_emb = midisim.load_embeddings()
+
+# Download main pre-trained midisim model
+model_path = midisim.download_model()
+
+# Load midisim model
+model, ctx, dtype = midisim.load_model(model_path)
+
+# Load source MIDI
+input_toks_seqs = midisim.midi_to_tokens('Come To My Window.mid', verbose=True)
+
+# Compute source/query embeddings
+query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs)
+
+# Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
+idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
+
+# Convert the results to sorted list with transpose values
+idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
+
+# Print corpus matches (and optionally) convert the final result to a handy dict
+midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+```
+
+### Raw/custom use example
+
+```python
+import torch
+from x_transformers import TransformerWrapper, Encoder
+
+SEQ_LEN = 3072
+
+MASK_IDX     = 384
+PAD_IDX      = 385
+VOCAB_SIZE   = 386
+
+MASK_PROB    = 0.15
+
+DEVICE = 'cuda'
+DTYPE  = torch.bfloat16
+
+MODEL_CKPT = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
+
+model = TransformerWrapper(
+    num_tokens = VOCAB_SIZE,
+    max_seq_len = SEQ_LEN,
+    attn_layers = Encoder(
+        dim   = 512,
+        depth = 8,
+        heads = 8,
+        rotary_pos_emb = True,
+        attn_flash = True,
+    ),
+)
+
+
+model.load_state_dict(torch.load(MODEL_CKPT))
+
+model.to(DEVICE)
+model.eval()
+
+autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ```
 
 ***
