@@ -42,7 +42,7 @@ model_path = midisim.download_model()
 model, ctx, dtype = midisim.load_model(model_path)
 
 # Load source MIDI
-input_toks_seqs = midisim.midi_to_tokens('Come To My Window.mid', verbose=True)
+input_toks_seqs = midisim.midi_to_tokens('Come To My Window.mid')
 
 # Compute source/query embeddings
 query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs)
