@@ -137,6 +137,9 @@ midisim.save_embeddings(midi_corpus_file_names,
                         midi_corpus_embeddings,
                         verbose=False
                        )
+
+# You can now use this saved custom MIDI corpus file with midisim.load_embeddings
+# and the rest of the pipeline outlined in basic use section.
 ```
 
 ***
