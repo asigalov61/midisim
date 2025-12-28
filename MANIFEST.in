@@ -1,0 +1,4 @@
+include midisim/README.md
+recursive-include midisim/ *
+recursive-include midisim/models *
+recursive-include midisim/artwork *
