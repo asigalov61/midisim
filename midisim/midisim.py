@@ -44,8 +44,9 @@ r'''############################################################################
 #   !pip install torch
 #   !pip install einops
 @   !pip install einx
+#   !pip install torch-summary
 #   !pip install matplotlib
-#   !pip install numpy==1.26.4
+#   !pip install numpy==1.24.4
 #
 ###################################################################################
 ###################################################################################
@@ -63,8 +64,12 @@ r'''############################################################################
 print('=' * 70)
 print('Loading midisim Python module...')
 print('Please wait...')
+print('=' * 70)
 
 __version__ = '1.0.0'
+
+print('midisim module version', __version__)
+print('=' * 70)
 
 ###################################################################################
 ###################################################################################
@@ -83,41 +88,447 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+from .x_transformer_2_3_1 import TransformerWrapper, Encoder
+
+from torchsummary import summary
+
 from . import TMIDIX
 
 from huggingface_hub import hf_hub_download, snapshot_download
 
+print('=' * 70)
+print('PyTorch version:', torch.__version__)
+print('=' * 70)
+
 ###################################################################################
 
-def download_embeddings(repo_id='projectlosangeles/midisim-embeddings',
-                        revision='main',
-                        local_dir='./midisim-embeddings/',
-                        verbose=True
-                       ):
+def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
+                        revision: str = 'main',
+                        local_dir: str = './midisim-embeddings/',
+                        verbose: bool = True
+                       ) -> str:
 
-    print('=' * 70)
-    print('Downloading embeddings...')
-    print('=' * 70)
+    """
+    Function to download pre-computed midisim embeddings from Hugging Face
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('Downloading embeddings...')
+        print('=' * 70)
 
     result = snapshot_download(repo_id=repo_id,
                                repo_type='dataset',
                                revision=revision,
                                local_dir=local_dir
                               )
-    
-    print('=' * 70)
-    print('Done!')
-    print('=' * 70)
+
+    if verbose:
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
     
     return result
 
 ###################################################################################
 
-def midi_to_tokens_sequences(midi_file_path: str,
-                             max_seq_len: int = 3072,
-                             transpose_factor: int = 6,
-                             verbose: bool = False
-                            ):
+def download_model(repo_id: str = 'projectlosangeles/midisim',
+                   filename: str = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth',
+                   local_dir: str = './midisim-models/',
+                   verbose: bool = True
+                  ) -> str:
+    
+    """
+    Function to download pre-trained midisim model from Hugging Face
+    """
+    
+    if verbose:
+        print('=' * 70)
+        print('Downloading model...')
+        print('=' * 70)
+
+    result = hf_hub_download(repo_id=repo_id,
+                             repo_type='model',
+                             filename=filename,
+                             local_dir=local_dir
+                            )
+    if verbose:    
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+    
+    return result
+
+###################################################################################
+
+def load_model(model_path: str = './midisim-models/midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth',
+               dim: int = 512,
+               depth: int = 8,
+               heads: int = 8,
+               max_seq_len: int = 3072,
+               pad_idx: int = 385,
+               dtype: torch.dtype = torch.bfloat16,
+               device: str = 'cuda',
+               verbose: bool = True
+              ) -> str:
+
+    """Load and initialize a preconfigured midisim Transformer model from a checkpoint.
+    
+    One-line summary
+    ----------------
+    Create a `TransformerWrapper` with an `Encoder` attention stack, load weights
+    from a checkpoint file, move the model to the requested device, set it to
+    evaluation mode, and return the model together with an automatic mixed-precision
+    (AMP) autocast context and the chosen dtype.
+    
+    Detailed description
+    --------------------
+    This helper constructs a Transformer-based model using the provided
+    architecture hyperparameters, loads a saved state dictionary from `model_path`
+    (using `torch.load`), transfers the model to `device`, and switches it to
+    evaluation mode (`model.eval()`). It also creates and returns a `torch.amp.autocast`
+    context manager configured for the requested `device` and `dtype`. When
+    `verbose` is True, the function prints progress messages and a model summary.
+    
+    Parameters
+    ----------
+    model_path : str, optional
+        Filesystem path to the saved PyTorch checkpoint (state dict). Default is
+        `'./midisim-models/midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'`.
+    dim : int, optional
+        Hidden dimension size for the encoder attention layers. Default: 512.
+    depth : int, optional
+        Number of encoder layers (depth of the Transformer encoder). Default: 8.
+    heads : int, optional
+        Number of attention heads per multi-head attention layer. Default: 8.
+    max_seq_len : int, optional
+        Maximum sequence length the model supports (positional embedding length).
+        Default: 3072.
+    pad_idx : int, optional
+        Index reserved for padding tokens. The model's vocabulary size is set to
+        `pad_idx + 1`. Default: 385.
+    dtype : torch.dtype, optional
+        Floating-point dtype used for AMP autocasting (e.g., `torch.bfloat16`,
+        `torch.float16`, `torch.float32`). Default: `torch.bfloat16`.
+    device : str or torch.device, optional
+        Target device for the model (e.g., `'cuda'`, `'cpu'`, or a `torch.device`).
+        Default: `'cuda'`.
+    verbose : bool, optional
+        If True, print initialization/loading progress and a model summary.
+        Default: True.
+    
+    Returns
+    -------
+    tuple
+        A 3-tuple `(model, ctx, dtype)` where:
+        - **model**: the `TransformerWrapper` instance with loaded weights,
+          moved to `device` and set to evaluation mode.
+        - **ctx**: a `torch.amp.autocast` context manager configured with
+          `device_type=device` and `dtype=dtype`. Use this context when running
+          inference to enable mixed-precision casting consistent with the model.
+        - **dtype**: the `torch.dtype` passed into the function (returned for
+          convenience so callers can reuse it when preparing inputs or contexts).
+    
+    Side effects and notes
+    ----------------------
+    - The function calls `torch.load(model_path)` and `model.load_state_dict(...)`.
+      The checkpoint must be a compatible state dictionary for the constructed
+      model architecture; otherwise `model.load_state_dict` may raise a
+      `RuntimeError`.
+    - The model is moved to `device` via `model.to(device)` and set to evaluation
+      mode with `model.eval()`.
+    - `num_tokens` is derived from `pad_idx + 1`. Ensure `pad_idx` matches the
+      tokenizer/vocabulary used when the checkpoint was created.
+    - The `summary(model)` call used when `verbose` is True requires an available
+      `summary` function in scope (for example from `torchinfo` or a custom helper).
+    - The returned `ctx` is a context manager; to use it:
+      ```py
+      with ctx:
+          outputs = model(inputs)
+      ```
+    - If `device` is `'cuda'` but CUDA is unavailable, `model.to(device)` will raise
+      an error; pass `'cpu'` to run on CPU.
+    
+    Exceptions
+    ----------
+    - `FileNotFoundError` or `OSError` if `model_path` does not exist or cannot be read.
+    - `RuntimeError` if the checkpoint is incompatible with the model architecture
+      (e.g., missing or unexpected keys in the state dict).
+    - Any exceptions raised by `model.to(device)` if the device is invalid or
+      resources are insufficient.
+    
+    Example
+    -------
+    model, amp_ctx, dtype = load_model(
+        model_path='checkpoints/midisim.pth',
+        dim=512,
+        depth=8,
+        heads=8,
+        max_seq_len=3072,
+        pad_idx=385,
+        dtype=torch.bfloat16,
+        device='cuda',
+        verbose=True,
+    )
+    
+    # Inference example
+    model_input = ...  # prepare input tensor on the same device
+    with amp_ctx:
+        logits = model(model_input)
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('midisim model loader')
+        print('=' * 70)
+        print('Initializing model...')
+
+    ctx = torch.amp.autocast(device_type=device, dtype=dtype)
+
+    model = TransformerWrapper(
+                num_tokens=pad_idx+1,
+                max_seq_len=max_seq_len,
+                attn_layers=Encoder(
+                    dim=dim,
+                    depth=depth,
+                    heads=heads,
+                    rotary_pos_emb=True,
+                    attn_flash=True,
+                ),
+    )
+
+    if verbose:
+        print('=' * 70)
+        print('Loading model checkpoint...')
+    
+    model.load_state_dict(torch.load(model_path))
+
+    if verbose:
+        print('=' * 70)
+    
+    model.to(device)
+    model.eval()
+
+    if verbose:
+        print('Done!')
+
+        print('=' * 70)
+        print('Model Summary')
+        summary(model)
+
+    return model, ctx, dtype
+
+###################################################################################
+
+def load_embeddings(embeddings_path: str = './midisim-embeddings/discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy',
+                    midi_names_key: str = 'midi_names',
+                    midi_embeddings_key: str = 'midi_embeddings',
+                    verbose: bool = True
+                   ) -> Tuple[np.ndarray, np.ndarray]:
+
+    """
+    Helper function that loads pre-computed embeddings
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('Loading embeddings...')
+        
+    embeddings_data = np.load(embeddings_path, allow_pickle=True)
+    
+    if verbose:
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+        
+    return embeddings_data[midi_names_key], embeddings_data[midi_embeddings_key]
+
+###################################################################################
+
+def save_embeddings(embeddings_name_strings: list[str],
+                    embeddings: Union[torch.Tensor, np.ndarray],
+                    name_strings_key: str = 'midi_names',
+                    embeddings_key: str = 'midi_embeddings',
+                    output_file_name: str = 'saved_midi_embeddings.npy',
+                    return_merged_array: bool = False,
+                    verbose=True
+                   ) -> Union[np.ndarray, None]:
+
+    """Save a list of name strings and their corresponding embedding vectors into a NumPy structured array
+    and optionally persist it to disk.
+    
+    This function builds a NumPy structured array with two fields (one for the name strings and one for
+    the embedding vectors), populates it from the provided inputs, casts embeddings to `np.float32`,
+    and either returns the merged structured array or saves it to disk using `np.save`.
+    
+    Parameters
+    ----------
+    embeddings_name_strings : list[str]
+        Sequence of Python strings that identify each embedding (e.g., filenames, IDs, labels).
+        The length of this list determines the number of rows in the resulting structured array.
+    embeddings : Union[torch.Tensor, np.ndarray]
+        2D array-like of shape `(n, D)` containing the embedding vectors, where `n` must equal
+        `len(embeddings_name_strings)` and `D` is the embedding dimensionality. If a `torch.Tensor`
+        is provided it will be converted to a NumPy array with `.numpy()` (no automatic `.cpu()`
+        or `.detach()` is performed by this function).
+    name_strings_key : str, optional
+        Field name to use for the name strings in the structured dtype (default: `'midi_names'`).
+    embeddings_key : str, optional
+        Field name to use for the embedding vectors in the structured dtype (default:
+        `'midi_embeddings'`).
+    output_file_name : str, optional
+        Path (filename) where the structured array will be saved with `np.save` if
+        `return_merged_array` is `False` (default: `'saved_midi_embeddings.npy'`).
+    return_merged_array : bool, optional
+        If `True`, the function returns the constructed structured NumPy array and does not write
+        anything to disk. If `False`, the array is saved to `output_file_name` and the function
+        returns `None` (default: `False`).
+    verbose : bool, optional
+        If `True`, print progress and diagnostic messages to stdout (default: `True`).
+    
+    Returns
+    -------
+    Union[np.ndarray, None]
+        - If `return_merged_array` is `True`: the NumPy structured array of length `n` with dtype
+          `[(name_strings_key, object), (embeddings_key, np.float32, (D,))]`.
+        - If `return_merged_array` is `False`: `None` (the array is saved to `output_file_name`).
+    
+    Raises
+    ------
+    ValueError
+        - If `embeddings` does not have a second dimension (i.e., is not 2D) so the embedding
+          dimensionality `D` cannot be determined.
+        - If the number of rows in `embeddings` does not match `len(embeddings_name_strings)`.
+    TypeError
+        - If `embeddings_name_strings` is not a sequence with a definable length.
+    Exception
+        - Any unexpected exceptions raised while reading attributes (e.g., `.shape`, `.dtype`) or
+          during `np.save` will propagate to the caller.
+    
+    Notes
+    -----
+    - The function constructs a structured dtype where the name field uses Python `object` to allow
+      variable-length strings and the embedding field is a fixed-size `np.float32` vector of length `D`.
+    - Embeddings are explicitly cast to `np.float32` before assignment; this may change precision.
+    - When a `torch.Tensor` is passed, the function calls `.numpy()` directly. If the tensor is on a
+      GPU or requires gradient, callers should ensure it is detached and moved to CPU first (e.g.,
+      `embeddings.detach().cpu()`), otherwise `.numpy()` may raise an error.
+    - The file is written using `np.save`, producing a `.npy` file that can be loaded with `np.load`.
+    - Verbose logging is intended for debugging and progress visibility; set `verbose=False` to silence.
+    
+    Example
+    -------
+    >>> # embeddings as numpy array
+    >>> names = ['song_a.mid', 'song_b.mid']
+    >>> embs = np.random.randn(2, 512)
+    >>> save_embeddings(names, embs, output_file_name='embs.npy', verbose=False)
+    >>> # embeddings as torch tensor, return array instead of saving
+    >>> import torch
+    >>> t = torch.randn(2, 512)
+    >>> arr = save_embeddings(names, t, return_merged_array=True, verbose=False)
+    >>> assert arr.dtype == np.dtype([('midi_names', object), ('midi_embeddings', np.float32, (512,))])
+    
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('Saving embeddings...')
+        print('=' * 70)
+        print("save_embeddings: called with parameters:")
+        print(f"  number of name strings provided: {len(embeddings_name_strings)}")
+        print(f"  output_file_name: {output_file_name}")
+        print(f"  name_strings_key: {name_strings_key}")
+        print(f"  embeddings_key: {embeddings_key}")
+        print(f"  return_merged_array: {return_merged_array}")
+        print(f"  verbose: {verbose}")
+        print('=' * 70)
+
+    # Convert torch tensor to numpy if needed
+    if type(embeddings) == torch.Tensor:
+        if verbose:
+            print("save_embeddings: embeddings is a torch.Tensor, converting to numpy array with .numpy()")
+        embeddings = embeddings.cpu().numpy()
+    else:
+        if verbose:
+            print(f"save_embeddings: embeddings is of type {type(embeddings)}; no conversion performed")
+
+    # Basic shape and length checks
+    try:
+        n = len(embeddings_name_strings)
+    except Exception as e:
+        if verbose:
+            print("save_embeddings: ERROR computing length of embeddings_name_strings:", e)
+        raise
+
+    try:
+        D = embeddings.shape[1]
+    except Exception as e:
+        if verbose:
+            print("save_embeddings: ERROR reading embeddings.shape[1]:", e)
+            print("  embeddings.shape is:", getattr(embeddings, "shape", None))
+        raise
+
+    if verbose:
+        print(f"save_embeddings: determined n = {n} (number of entries)")
+        print(f"save_embeddings: determined D = {D} (embedding dimensionality)")
+        print("save_embeddings: preparing numpy structured dtype for storage")
+
+    dtype = np.dtype([
+        (name_strings_key, object),              # variable-length Python strings
+        (embeddings_key, np.float32, (D,))       # fixed-size embedding vector
+    ])
+
+    if verbose:
+        print("save_embeddings: dtype constructed as:")
+        print(f"  {dtype}")
+
+    # Create empty structured array
+    if verbose:
+        print(f"save_embeddings: allocating empty numpy array of length {n} with dtype above")
+    arr = np.empty(n, dtype=dtype)
+
+    # Fill name strings
+    if verbose:
+        print("save_embeddings: assigning name strings to structured array")
+        print(f"  first 5 name strings (or fewer): {embeddings_name_strings[:5]}")
+    arr[name_strings_key] = embeddings_name_strings
+
+    # Cast embeddings to float32 and assign
+    if verbose:
+        print("save_embeddings: casting embeddings to np.float32 and assigning to structured array")
+        print(f"  embeddings original dtype: {getattr(embeddings, 'dtype', 'unknown')}")
+        print(f"  embeddings shape: {getattr(embeddings, 'shape', 'unknown')}")
+    arr[embeddings_key] = embeddings.astype(np.float32)
+
+    if return_merged_array:
+        if verbose:
+            print('=' * 70)
+            print("save_embeddings: return_merged_array is True; returning the merged structured array without saving to disk")
+            print(f"  returning array with length {len(arr)} and dtype {arr.dtype}")
+            print('=' * 70)
+            print('Done!')
+            print('=' * 70)
+        return arr
+
+    # Save to disk
+    if verbose:
+        print('=' * 70)
+        print(f"save_embeddings: return_merged_array is False; saving structured array to '{output_file_name}' using np.save")
+    np.save(output_file_name, arr)
+    if verbose:
+        print(f"save_embeddings: save complete. File written: {output_file_name}")
+        print(f"  saved array length: {len(arr)}; dtype: {arr.dtype}")
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+        
+###################################################################################
+
+def midi_to_tokens(midi_file_path: str,
+                   max_seq_len: int = 3072,
+                   transpose_factor: int = 6,
+                   verbose: bool = True
+                  )-> list[list[int]]:
     
     """
     Convert a single-track MIDI file into one or more compact token sequences suitable for model input.
@@ -183,7 +594,7 @@ def midi_to_tokens_sequences(midi_file_path: str,
 
     Example
     -------
-    >>> sequences = midi_to_tokens_sequences("example.mid", transpose_factor=2, verbose=True)
+    >>> sequences = midi_to_tokens("example.mid", transpose_factor=2, verbose=True)
     >>> len(sequences)
     4  # variants for tv in [-2, -1, 0, 1] when transpose_factor == 2
 
@@ -278,7 +689,7 @@ def midi_to_tokens_sequences(midi_file_path: str,
             all_toks_sequences.append(out_score[:max_seq_len])
 
             if verbose:
-                print(f"Variant tv={tv} produced sequence length {len(out_score)}.")
+                print(f"Variant tv={tv} produced sequence length {len(out_score[:max_seq_len])}.")
 
         if verbose:
             print('=' * 70)
@@ -781,9 +1192,23 @@ def cosine_similarity_topk(
 
 ###################################################################################
 
-def idxs_sims_to_sorted_list(idxs, sims):
+def idxs_sims_to_sorted_list(idxs: np.ndarray,
+                             sims: np.ndarray
+                             ) -> List[Tuple]:
+    
+    """
+    Helper function to convert indexes and similarities arrays into
+    a sorted list with corresponding transpose values.
+    
+    Rwturns
+    -------
+    List of tuples: (corpus_index, transpose_value, cosine_similarity)
+    """
+    
+    idxs = np.array(idxs)
+    sims = np.array(sims)
 
-    assert idxs.shape == sims.shape, 'Shape mismatch!'
+    assert idxs.shape == sims.shape, f'Shape mismatch between indexes array and similarities array: {idxs.shape} != {sims.shape}'
 
     flat_idxs = [x for row in idxs.tolist() for x in row]
     flat_sims = [x for row in sims.tolist() for x in row]
@@ -806,11 +1231,38 @@ def idxs_sims_to_sorted_list(idxs, sims):
     
     flat_tvs = [v for v in range(sr, er) for _ in range(tkv)]
 
-    sorted_list = sorted(zip(flat_idxs, flat_sims, flat_tvs), key=lambda x: x[1])
+    sorted_list = sorted(zip(flat_idxs, flat_tvs, flat_sims), key=lambda x: -x[2])
 
     return sorted_list
 
 ###################################################################################
+
+def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
+                                corpus_midi_names: Union[list, np.ndarray],
+                                return_as_list: bool = False
+                                ) -> Union[List[Tuple], None]:
+    
+    if type(corpus_midi_names) == np.ndarray:
+        corpus_midi_names = corpus_midi_names.tolist()    
+
+    print('=' * 70)
+    print('Search results:')
+    print('=' * 70)
+    
+    return_list = []
+
+    for i, (idx, tv, sim) in enumerate(sorted_idxs_sims_list):
+        print(f'#{str(i).zfill(3)} {corpus_midi_names[idx]} --- {tv} --- {round(sim, 8)}')
+        
+        if return_as_list:
+            return_list.append([i, corpus_midi_names[idx], tv, sim])    
+        
+    print('=' * 70)
+    print('Total number of records:', len(sorted_idxs_sims_list))
+    print('=' * 70)
+    
+    if return_as_list:
+        return return_list
 
 print('Module is loaded!')
 print('Enjoy! :)')

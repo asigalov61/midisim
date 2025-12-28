@@ -5,5 +5,29 @@
 
 ***
 
+## Installation
+
+### midisim PyPI package (for general use)
+
+```sh
+!pip install -U midisim
+```
+
+### x-transformers 2.3.1 (for raw/custom tasks)
+
+```sh
+!pip install x-transformers==2.3.1
+```
+
+***
+
+### Basic use example
+
+```python
+...
+```
+
+***
+
 ### Project Los Angeles
 ### Tegridy Code 2025
