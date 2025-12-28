@@ -21,6 +21,8 @@
 
 ***
 
+## Basic use guide
+
 ### General use example
 
 ```python
