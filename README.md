@@ -102,5 +102,44 @@ autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 
 ***
 
+## Creating custom MIDI corpus embeddings
+
+```python
+# Load main midisim module
+import midisim
+
+# Import helper modules
+import os
+import tqdm
+
+# Call included TMIDIX module through midisim to create MIDI files list
+custom_midi_corpus_file_names = midisim.TMIDIX.create_files_list(['./custom_midi_corpus_dir/'])
+
+# Create two lists: one with MIDI corpus file names 
+# and another with MIDI corpus tokens representations suitable for embeddings generation
+midi_corpus_file_names = []
+midi_corpus_tokens = []
+
+for midi_file in tqdm.tqdm(custom_midi_corpus_file_names):
+    midi_corpus_file_names.append(os.path.splitext(os.path.basename(midi_file))[0])
+    
+    midi_tokens = midisim.midi_to_tokens(midi_file, transpose_factor=0, verbose=False)[0]
+    midi_corpus_tokens.append(midi_tokens)
+
+# Load main midisim model
+model, ctx, dtype = midisim.load_model(verbose=False)
+
+# Generate MIDI corpus embeddings
+midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens)
+
+# Save generated MIDI corpus embeddings and MIDI corpus file names in one handy NumPy file
+midisim.save_embeddings(midi_corpus_file_names,
+                        midi_corpus_embeddings,
+                        verbose=False
+                       )
+```
+
+***
+
 ### Project Los Angeles
 ### Tegridy Code 2025
