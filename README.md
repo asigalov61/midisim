@@ -61,19 +61,22 @@ midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, retur
 import torch
 from x_transformers import TransformerWrapper, Encoder
 
+# Original model hyperparameters
 SEQ_LEN = 3072
 
-MASK_IDX     = 384
-PAD_IDX      = 385
-VOCAB_SIZE   = 386
+MASK_IDX     = 384 # Use this value for masked modelling
+PAD_IDX      = 385 # Model pad index
+VOCAB_SIZE   = 386 # Total vocab size
 
-MASK_PROB    = 0.15
+MASK_PROB    = 0.15 # Original training mask probability value (use for masked modelling)
 
-DEVICE = 'cuda'
-DTYPE  = torch.bfloat16
+DEVICE = 'cuda' # You can use any compatible device or CPU
+DTYPE  = torch.bfloat16 # Original training dtype
 
+# Official main midisim model checkpoint name
 MODEL_CKPT = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
 
+# Model architecture using x-transformers
 model = TransformerWrapper(
     num_tokens = VOCAB_SIZE,
     max_seq_len = SEQ_LEN,
@@ -86,12 +89,12 @@ model = TransformerWrapper(
     ),
 )
 
-
 model.load_state_dict(torch.load(MODEL_CKPT))
 
 model.to(DEVICE)
 model.eval()
 
+# Original training autoxast setup
 autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ```
 
