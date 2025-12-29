@@ -215,6 +215,14 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ***
 
+## Limitations
+
+* Current code and models support only MIDI music elements similarity (start-times, durations and pitches)
+* MIDI channels, instruments and velocities similarites are not currently supported due to complexity and practicality considerations
+* Current pre-trained models are limited by 3k sequence length (~1000 MIDI music notes) so long running MIDIs can only be analyzed in chunks
+
+***
+
 ## Citations
 
 ```bibtex
