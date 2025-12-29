@@ -49,13 +49,6 @@ r'''############################################################################
 #   !pip install numpy==1.24.4
 #
 ###################################################################################
-###################################################################################
-#
-#   Basic use example
-#
-#   import midisim
-#
-###################################################################################
 '''
 
 ###################################################################################
@@ -74,7 +67,7 @@ print('=' * 70)
 ###################################################################################
 ###################################################################################
 
-import os, copy, math
+import os, copy, math, shutil
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
@@ -301,7 +294,7 @@ def load_model(model_path: str = './midisim-models/midisim_small_pre_trained_mod
         print('=' * 70)
         print('Loading model checkpoint...')
     
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=device))
 
     if verbose:
         print('=' * 70)
@@ -328,6 +321,10 @@ def load_embeddings(embeddings_path: str = './midisim-embeddings/discover_midi_d
 
     """
     Helper function that loads pre-computed embeddings
+
+    Returns
+    -------
+    Tuple of nd.arrays (midi_names_arr, midi_embeddings_arr)
     """
 
     if verbose:
@@ -448,6 +445,10 @@ def save_embeddings(embeddings_name_strings: list[str],
         if verbose:
             print("save_embeddings: embeddings is a torch.Tensor, converting to numpy array with .numpy()")
         embeddings = embeddings.cpu().numpy()
+    elif type(embeddings) == list:
+        if verbose:
+                print("save_embeddings: embeddings is a list, converting to numpy array")
+        embeddings = np.array(embeddings)
     else:
         if verbose:
             print(f"save_embeddings: embeddings is of type {type(embeddings)}; no conversion performed")
@@ -1267,6 +1268,75 @@ def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
 print('Module is loaded!')
 print('Enjoy! :)')
 print('=' * 70)
+
+###################################################################################
+
+def copy_corpus_files(sorted_idxs_sims_list : list[list],
+                      corpus_midis_dirs : list = ['./Corpus MIDIs Dir/'],
+                      main_output_dir : str = './Corpus Matches Dir/',
+                      sub_output_dir : str = 'Corpus MIDI Name',
+                      verbose: bool = True
+                     ) -> str:
+
+    """
+    Helper function that copies matched corpus MIDIs to a specified directory
+
+    Returns
+    -------
+    Output directory where files were copied as a string
+    """
+
+    if verbose:
+        print('=' * 70)
+        print('Corpus MIDI files copier')
+        print('=' * 70)
+    
+        print('Creating corpus MIDIs files list...')
+    
+    corpus_midis_list = TMIDIX.create_files_list(corpus_midis_dirs,
+                                                 verbose=verbose
+                                                )
+    
+    if verbose:
+        print('Creating corpus MIDIs files dict...')
+
+    corpus_midis_dic = {}
+
+    for fa in corpus_midis_list:
+        corpus_midis_dic[os.path.splitext(os.path.basename(fa))[0]] = fa
+
+    if verbose:
+        print('Copying corpus MIDIs files...')
+
+    out_dir = ''
+
+    for i, cfname, tv, sim in sorted_idxs_sims_list:
+
+        try:
+            sim = str(round(sim, 8))
+            tv = str(tv)
+
+            inp_fn = corpus_midis_dic[cfname]
+    
+            out_dir = os.path.join(main_output_dir, sub_output_dir)
+            os.makedirs(out_dir, exist_ok=True)
+            
+            out_fn = os.path.join(out_dir, sim + '_' + tv + '_' + cfname + '.mid')
+    
+            shutil.copy2(inp_fn, out_fn)
+
+        except Exception as ex:
+            if verbose:
+                print('Could not copy file #', i, ':', cfname)
+                
+            continue
+
+    if verbose:
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+
+    return out_dir
 
 ###################################################################################
 # This is the end of the midisim Python module
