@@ -198,20 +198,20 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ## midisim main functions reference list
 
-- `midisim.midisim.copy_corpus_files` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
-- `midisim.midisim.cosine_similarity_topk` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
-- `midisim.midisim.download_all_embeddings` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
-- `midisim.midisim.download_embeddings` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
-- `midisim.midisim.download_model` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
-- `midisim.midisim.get_embeddings_bf16` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
-- `midisim.midisim.idxs_sims_to_sorted_list` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
-- `midisim.midisim.load_embeddings` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
-- `midisim.midisim.load_model` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
-- `midisim.midisim.masked_mean_pool` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
-- `midisim.midisim.midi_to_tokens` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
-- `midisim.midisim.pad_and_mask` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
-- `midisim.midisim.print_sorted_idxs_sims_list` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
-- `midisim.midisim.save_embeddings` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
+- ```midisim.midisim.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
+- ```midisim.midisim.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
+- ```midisim.midisim.download_all_embeddings``` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
+- ```midisim.midisim.download_embeddings``` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
+- ```midisim.midisim.download_model``` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
+- ```midisim.midisim.get_embeddings_bf16``` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
+- ```midisim.midisim.idxs_sims_to_sorted_list``` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
+- ```midisim.midisim.load_embeddings``` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
+- ```midisim.midisim.load_model``` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
+- ```midisim.midisim.masked_mean_pool``` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
+- ```midisim.midisim.midi_to_tokens``` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
+- ```midisim.midisim.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
+- ```midisim.midisim.print_sorted_idxs_sims_list``` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
+- ```midisim.midisim.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
 
 ***
 
