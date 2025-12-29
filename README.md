@@ -196,7 +196,7 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ***
 
-## midisim main functions reference list
+## Main functions reference list
 
 - ```midisim.midisim.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
 - ```midisim.midisim.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
