@@ -84,6 +84,33 @@ def get_package_models() -> List[Dict]:
 
 ###################################################################################
 
+def get_package_embeddings() -> List[Dict]:
+    
+    """
+    Get pre-computed embeddings included with midisim package
+    
+    Returns
+    -------
+    List of dicts: {'embeddings': embeddings_file_name,
+                    'path': embeddings_full_path
+                   }
+    """
+    
+    embeddings_dict = []
+    
+    for resource in pkg_resources.contents(embeddings):
+        if resource.endswith('.npy'):
+            with pkg_resources.path(embeddings, resource) as p:
+                mdic = {'embeddings': resource,
+                        'path': str(p)
+                       }
+                
+                embeddings_dict.append(mdic)
+                
+    return sorted(embeddings_dict, key=lambda x: x['embeddings'])
+
+###################################################################################
+
 def is_installed(pkg: str) -> bool:
     """Return True if package is already installed (dpkg-query)."""
     try:

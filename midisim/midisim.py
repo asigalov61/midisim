@@ -95,19 +95,23 @@ print('=' * 70)
 
 ###################################################################################
 
-def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
-                        revision: str = 'main',
-                        local_dir: str = './midisim-embeddings/',
-                        verbose: bool = True
-                       ) -> str:
+def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
+                            revision: str = 'main',
+                            local_dir: str = './midisim-embeddings/',
+                            verbose: bool = True
+                           ) -> str:
 
     """
-    Function to download pre-computed midisim embeddings from Hugging Face
+    Helper function that downloads all pre-computed midisim embeddings from Hugging Face
+    
+    Returns
+    -------
+    Output directory path string where all embeddings were downloaded to
     """
 
     if verbose:
         print('=' * 70)
-        print('Downloading embeddings...')
+        print('Downloading all embeddings...')
         print('=' * 70)
 
     result = snapshot_download(repo_id=repo_id,
@@ -125,6 +129,39 @@ def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
 
 ###################################################################################
 
+def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
+                        filename: str = 'discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy',
+                        local_dir: str = './midisim-embeddings/',
+                        verbose: bool = True
+                       ) -> str:
+    
+    """
+    Helper function that downloads pre-computed midisim embeddings files from Hugging Face
+    
+    Returns
+    -------
+    Downloaded embeddings file path string
+    """
+    
+    if verbose:
+        print('=' * 70)
+        print('Downloading embeddings...')
+        print('=' * 70)
+
+    result = hf_hub_download(repo_id=repo_id,
+                             repo_type='dataset',
+                             filename=filename,
+                             local_dir=local_dir
+                            )
+    if verbose:    
+        print('=' * 70)
+        print('Done!')
+        print('=' * 70)
+    
+    return result
+
+###################################################################################
+
 def download_model(repo_id: str = 'projectlosangeles/midisim',
                    filename: str = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth',
                    local_dir: str = './midisim-models/',
@@ -132,7 +169,11 @@ def download_model(repo_id: str = 'projectlosangeles/midisim',
                   ) -> str:
     
     """
-    Function to download pre-trained midisim model from Hugging Face
+    Helper function that downloads pre-trained midisim models from Hugging Face
+    
+    Returns
+    -------
+    Downloaded model checkpoint file path string
     """
     
     if verbose:
@@ -313,14 +354,14 @@ def load_model(model_path: str = './midisim-models/midisim_small_pre_trained_mod
 
 ###################################################################################
 
-def load_embeddings(embeddings_path: str = './midisim-embeddings/discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy',
+def load_embeddings(embeddings_path: str = './midisim-embeddings/discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy',
                     midi_names_key: str = 'midi_names',
                     midi_embeddings_key: str = 'midi_embeddings',
                     verbose: bool = True
                    ) -> Tuple[np.ndarray, np.ndarray]:
 
     """
-    Helper function that loads pre-computed embeddings
+    Helper function that loads pre-computed embeddings file
 
     Returns
     -------
