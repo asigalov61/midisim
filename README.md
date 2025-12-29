@@ -104,8 +104,6 @@ autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 
 #### Large model (2 epochs)
 
-#### Default small model (2 epochs)
-
 ```python
 import torch
 from x_transformers import TransformerWrapper, Encoder
