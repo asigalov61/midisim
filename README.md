@@ -59,7 +59,7 @@ corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, cor
 
 ### Raw/custom use example
 
-#### Default small model (2 epochs)
+#### Small model (2 epochs)
 
 ```python
 import torch
