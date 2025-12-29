@@ -217,6 +217,7 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ## Citations
 
+```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
 	title        = { midisim (Revision 65e7442) },
@@ -225,7 +226,9 @@ midisim.save_embeddings(midi_corpus_file_names,
 	doi          = { 10.57967/hf/7366 },
 	publisher    = { Hugging Face }
 }
+```
 
+```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
 	title        = { midisim-embeddings (Revision 0fe903d) },
@@ -234,7 +237,9 @@ midisim.save_embeddings(midi_corpus_file_names,
 	doi          = { 10.57967/hf/7373 },
 	publisher    = { Hugging Face }
 }
+```
 
+```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
 	title        = { Discover-MIDI-Dataset (Revision 0eaecb5) },
@@ -243,6 +248,7 @@ midisim.save_embeddings(midi_corpus_file_names,
 	doi          = { 10.57967/hf/7361 },
 	publisher    = { Hugging Face }
 }
+```
 
 ***
 
