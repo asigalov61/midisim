@@ -198,9 +198,6 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ## midisim main functions reference list
 
-- `midisim.helpers.get_package_models` — *Retrieve a list of available package models or model metadata from the local environment or package registry.*  
-- `midisim.helpers.install_apt_package` — *Install a system package via apt, handling permissions and basic error reporting.*  
-- `midisim.helpers.is_installed` — *Check whether a given package or system dependency is already installed.*  
 - `midisim.midisim.copy_corpus_files` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
 - `midisim.midisim.cosine_similarity_topk` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
 - `midisim.midisim.download_all_embeddings` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
