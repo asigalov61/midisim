@@ -53,11 +53,13 @@ idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
 # Convert the results to sorted list with transpose values
 idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
 
-# Print corpus matches (and optionally) convert the final result to a handy dict
-midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+# Print corpus matches (and optionally) convert the final result to a handy list for further processing
+corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
 ```
 
 ### Raw/custom use example
+
+#### Default small model (2 epochs)
 
 ```python
 import torch
@@ -91,7 +93,52 @@ model = TransformerWrapper(
     ),
 )
 
-model.load_state_dict(torch.load(MODEL_CKPT))
+model.load_state_dict(torch.load(MODEL_CKPT, map_location=DEVICE))
+
+model.to(DEVICE)
+model.eval()
+
+# Original training autoxast setup
+autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
+```
+
+#### Large model (2 epochs)
+
+#### Default small model (2 epochs)
+
+```python
+import torch
+from x_transformers import TransformerWrapper, Encoder
+
+# Original model hyperparameters
+SEQ_LEN = 3072
+
+MASK_IDX     = 384 # Use this value for masked modelling
+PAD_IDX      = 385 # Model pad index
+VOCAB_SIZE   = 386 # Total vocab size
+
+MASK_PROB    = 0.15 # Original training mask probability value (use for masked modelling)
+
+DEVICE = 'cuda' # You can use any compatible device or CPU
+DTYPE  = torch.bfloat16 # Original training dtype
+
+# Official main midisim model checkpoint name
+MODEL_CKPT = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
+
+# Model architecture using x-transformers
+model = TransformerWrapper(
+    num_tokens = VOCAB_SIZE,
+    max_seq_len = SEQ_LEN,
+    attn_layers = Encoder(
+        dim   = 512,
+        depth = 16,
+        heads = 8,
+        rotary_pos_emb = True,
+        attn_flash = True,
+    ),
+)
+
+model.load_state_dict(torch.load(MODEL_CKPT, map_location=DEVICE))
 
 model.to(DEVICE)
 model.eval()
@@ -126,6 +173,13 @@ for midi_file in tqdm.tqdm(custom_midi_corpus_file_names):
     midi_tokens = midisim.midi_to_tokens(midi_file, transpose_factor=0, verbose=False)[0]
     midi_corpus_tokens.append(midi_tokens)
 
+# It is highly recommended to sort the resulting corpus by tokens sequence length
+# This greatly speeds up embeddings calculations
+sorted_midi_corpus = sorted(zip(midi_corpus_file_names, midi_corpus_tokens), key=lambda x: len(x[1]))
+midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
+
+# Now we are ready to generate embeddings as follows:
+
 # Load main midisim model
 model, ctx, dtype = midisim.load_model(verbose=False)
 
@@ -138,9 +192,31 @@ midisim.save_embeddings(midi_corpus_file_names,
                         verbose=False
                        )
 
-# You can now use this saved custom MIDI corpus file with midisim.load_embeddings
-# and the rest of the pipeline outlined in basic use section.
+# Now you can use this saved custom MIDI corpus NumPy file with midisim.load_embeddings()
+# and the rest of the pipeline outlined in general use section above
 ```
+
+***
+
+## midisim main functions reference list
+
+- `midisim.helpers.get_package_models` — *Retrieve a list of available package models or model metadata from the local environment or package registry.*  
+- `midisim.helpers.install_apt_package` — *Install a system package via apt, handling permissions and basic error reporting.*  
+- `midisim.helpers.is_installed` — *Check whether a given package or system dependency is already installed.*  
+- `midisim.midisim.copy_corpus_files` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
+- `midisim.midisim.cosine_similarity_topk` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
+- `midisim.midisim.download_all_embeddings` — *Download an entire embeddings dataset snapshot from a Hugging Face dataset repository to a local directory.*  
+- `midisim.midisim.download_embeddings` — *Download a single precomputed embeddings `.npy` file from a Hugging Face dataset repository.*  
+- `midisim.midisim.download_model` — *Download a pre-trained model checkpoint file from a Hugging Face model repository to a local directory.*  
+- `midisim.midisim.get_embeddings_bf16` — *Load or convert embeddings into bfloat16 format for memory-efficient inference on supported hardware.*  
+- `midisim.midisim.idxs_sims_to_sorted_list` — *Convert parallel index and similarity arrays into a single sorted list of (index, similarity) pairs ordered by similarity.*  
+- `midisim.midisim.load_embeddings` — *Load a saved NumPy embeddings file and return the arrays of MIDI names and corresponding embedding vectors.*  
+- `midisim.midisim.load_model` — *Construct a Transformer model, load weights from a checkpoint, move it to the requested device, and return the model with an AMP autocast context and dtype.*  
+- `midisim.midisim.masked_mean_pool` — *Compute a masked mean pooling over sequence embeddings, ignoring padded positions via a boolean or numeric mask.*  
+- `midisim.midisim.midi_to_tokens` — *Convert a single-track MIDI file into one or more compact integer token sequences (with optional transpositions) suitable for model input.*  
+- `midisim.midisim.pad_and_mask` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
+- `midisim.midisim.print_sorted_idxs_sims_list` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
+- `midisim.midisim.save_embeddings` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
 
 ***
 
