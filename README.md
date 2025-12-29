@@ -5,6 +5,15 @@
 
 ***
 
+## Main features
+
+* Ultra-fast GPU/CPU MIDI-to-MIDI similarity calculation, search and analysis
+* Quality pre-trained models and comprehensive pre-computed embeddings sets
+* Stand-alone, versatile, and very flexible codebase for general or custom MIDI-to-MIDI similarity tasks
+* Full cross-platform compatibility and support
+
+***
+
 ## Installation
 
 ### midisim PyPI package (for general use)
@@ -218,8 +227,9 @@ midisim.save_embeddings(midi_corpus_file_names,
 ## Limitations
 
 * Current code and models support only MIDI music elements similarity (start-times, durations and pitches)
-* MIDI channels, instruments and velocities similarites are not currently supported due to complexity and practicality considerations
+* MIDI channels, instruments, velocities and drums similarites are not currently supported due to complexity and practicality considerations
 * Current pre-trained models are limited by 3k sequence length (~1000 MIDI music notes) so long running MIDIs can only be analyzed in chunks
+* Solo drum track MIDIs are not currently supported and can't be analyzed
 
 ***
 
