@@ -14,6 +14,37 @@
 
 ***
 
+## Pre-trained models
+
+* ```midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth``` - Very fast and accurate small model, suitable for all tasks. This model is included in PyPI package or it can be downloaded from Hugging Face
+* ```midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth``` - Fast large model for more nuanced embeddings generation. Download checkpoint from Hugging Face
+
+#### Both pre-trained models were trained on full [Godzilla Piano](https://huggingface.co/datasets/asigalov61/Godzilla-Piano) dataset for 2 complete epochs
+
+***
+
+## Pre-computed embeddings sets
+
+### For small pre-trained model
+
+```discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy``` - 37292 genre MIDIs embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
+
+### For large pre-trained model
+
+```discover_midi_dataset_37292_genres_midis_embeddings_large_cc_by_nc_sa.npy``` - 37292 genre MIDIs embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_202400_identified_midis_embeddings_large_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
+
+#### Pre-computed embeddings MIDI source datase: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+
+***
+
 ## Installation
 
 ### midisim PyPI package (for general use)
@@ -49,10 +80,7 @@ import midisim
 # Option 1: Download sample pre-computed embeddings corpus from Hugging Face
 emb_path = midisim.download_embeddings()
 
-# Option 2: Use sample pre-computed embeddings corpus included in midisim PyPI package
-# emb_path = get_package_embeddings()[0]['path']
-
-# Option 3: use custom pre-computed embeddings corpus
+# Option 2: use custom pre-computed embeddings corpus
 # See custom embeddings generation section of this README for details
 # emb_path = './cusomt_midis_embeddings_corpus.npy'
 
