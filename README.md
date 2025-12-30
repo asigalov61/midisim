@@ -36,13 +36,15 @@
 
 ```python
 # ================================================================================================
+# Initalize midisim
+# ================================================================================================
 
 # Import main midisim module
 import midisim
 
 # ================================================================================================
-
 # Prepare midisim embeddings
+# ================================================================================================
 
 # Option 1: Download sample pre-computed embeddings corpus from Hugging Face
 emb_path = midisim.download_embeddings()
@@ -58,8 +60,8 @@ emb_path = midisim.download_embeddings()
 corpus_midi_names, corpus_emb = midisim.load_embeddings(emb_path)
 
 # ================================================================================================
-
 # Prepare midisim model
+# ================================================================================================
 
 # Option 1: Download main pre-trained midisim model from Hugging Face
 model_path = midisim.download_model()
@@ -71,15 +73,15 @@ model_path = midisim.download_model()
 model, ctx, dtype = midisim.load_model(model_path)
 
 # ================================================================================================
-
 # Prepare source MIDI
+# ================================================================================================
 
 # Load source MIDI
 input_toks_seqs = midisim.midi_to_tokens('Come To My Window.mid')
 
 # ================================================================================================
-
 # Calculate and analyze embeddings
+# ================================================================================================
 
 # Compute source/query embeddings
 query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs)
@@ -88,8 +90,8 @@ query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs)
 idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
 
 # ================================================================================================
-
 # Processs, print and save results
+# ================================================================================================
 
 # Convert the results to sorted list with transpose values
 idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
@@ -98,8 +100,8 @@ idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
 corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
 
 # ================================================================================================
-
-# Optionally, copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
+# Copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
+# ================================================================================================
 
 # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
 out_dir_path = copy_corpus_files(corpus_matches_list)
