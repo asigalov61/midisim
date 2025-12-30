@@ -202,15 +202,23 @@ autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ## Creating custom MIDI corpus embeddings
 
 ```python
+# ================================================================================================
+
 # Load main midisim module
 import midisim
+
+# ================================================================================================
 
 # Import helper modules
 import os
 import tqdm
 
+# ================================================================================================
+
 # Call included TMIDIX module through midisim to create MIDI files list
 custom_midi_corpus_file_names = midisim.TMIDIX.create_files_list(['./custom_midi_corpus_dir/'])
+
+# ================================================================================================
 
 # Create two lists: one with MIDI corpus file names 
 # and another with MIDI corpus tokens representations suitable for embeddings generation
@@ -228,7 +236,11 @@ for midi_file in tqdm.tqdm(custom_midi_corpus_file_names):
 sorted_midi_corpus = sorted(zip(midi_corpus_file_names, midi_corpus_tokens), key=lambda x: len(x[1]))
 midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
 
-# Now we are ready to generate embeddings as follows:
+# ================================================================================================
+
+# Now you are ready to generate embeddings as follows:
+
+# ================================================================================================
 
 # Load main midisim model
 model, ctx, dtype = midisim.load_model(verbose=False)
@@ -236,14 +248,18 @@ model, ctx, dtype = midisim.load_model(verbose=False)
 # Generate MIDI corpus embeddings
 midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens)
 
+# ================================================================================================
+
 # Save generated MIDI corpus embeddings and MIDI corpus file names in one handy NumPy file
 midisim.save_embeddings(midi_corpus_file_names,
                         midi_corpus_embeddings,
                         verbose=False
                        )
 
-# Now you can use this saved custom MIDI corpus NumPy file with midisim.load_embeddings()
-# and the rest of the pipeline outlined in general use section above
+# ================================================================================================
+
+# You now can use this saved custom MIDI corpus NumPy file with midisim.load_embeddings()
+# and the rest of the pipeline outlined in the general use section above
 ```
 
 ***
