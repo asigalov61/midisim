@@ -1237,7 +1237,8 @@ def cosine_similarity_topk(
 ###################################################################################
 
 def idxs_sims_to_sorted_list(idxs: np.ndarray,
-                             sims: np.ndarray
+                             sims: np.ndarray,
+                             remove_dupes=True,
                              ) -> List[Tuple]:
     
     """
@@ -1276,8 +1277,19 @@ def idxs_sims_to_sorted_list(idxs: np.ndarray,
     flat_tvs = [v for v in range(sr, er) for _ in range(tkv)]
 
     sorted_list = sorted(zip(flat_idxs, flat_tvs, flat_sims), key=lambda x: -x[2])
-
-    return sorted_list
+    
+    if remove_dupes:
+        deduped_sorted_list = []
+        seen = set()
+        
+        for idx, tv, sim in sorted_list:
+            if idx not in seen:
+                deduped_sorted_list.append([idx, tv, sim])
+                seen.add(idx)
+            
+        return deduped_sorted_list
+    
+    return sorted_list   
 
 ###################################################################################
 
