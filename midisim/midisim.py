@@ -46,7 +46,7 @@ r'''############################################################################
 @   !pip install einx
 #   !pip install torch-summary
 #   !pip install matplotlib
-#   !pip install numpy==1.24.4
+#   !pip install numpy==1.26.4
 #
 ###################################################################################
 '''
@@ -71,7 +71,7 @@ import os, copy, math, shutil
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
-from typing import List, Optional, Union, Tuple, Dict
+from typing import List, Optional, Union, Tuple, Dict, Any
 
 from functools import lru_cache
 
@@ -100,7 +100,8 @@ print('=' * 70)
 def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
                             revision: str = 'main',
                             local_dir: str = './midisim-embeddings/',
-                            verbose: bool = True
+                            verbose: bool = True,
+                            **kwargs: dict[str, Any]
                            ) -> str:
 
     """
@@ -119,7 +120,8 @@ def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings
     result = snapshot_download(repo_id=repo_id,
                                repo_type='dataset',
                                revision=revision,
-                               local_dir=local_dir
+                               local_dir=local_dir,
+                               **kwargs
                               )
 
     if verbose:
@@ -134,7 +136,8 @@ def download_all_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings
 def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
                         filename: str = 'discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy',
                         local_dir: str = './midisim-embeddings/',
-                        verbose: bool = True
+                        verbose: bool = True,
+                        **kwargs: dict[str, Any]
                        ) -> str:
     
     """
@@ -153,7 +156,8 @@ def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
     result = hf_hub_download(repo_id=repo_id,
                              repo_type='dataset',
                              filename=filename,
-                             local_dir=local_dir
+                             local_dir=local_dir,
+                             **kwargs
                             )
     if verbose:    
         print('=' * 70)
@@ -167,7 +171,8 @@ def download_embeddings(repo_id: str = 'projectlosangeles/midisim-embeddings',
 def download_model(repo_id: str = 'projectlosangeles/midisim',
                    filename: str = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth',
                    local_dir: str = './midisim-models/',
-                   verbose: bool = True
+                   verbose: bool = True,
+                   **kwargs: dict[str, Any]
                   ) -> str:
     
     """
@@ -186,7 +191,8 @@ def download_model(repo_id: str = 'projectlosangeles/midisim',
     result = hf_hub_download(repo_id=repo_id,
                              repo_type='model',
                              filename=filename,
-                             local_dir=local_dir
+                             local_dir=local_dir,
+                             **kwargs
                             )
     if verbose:    
         print('=' * 70)
@@ -1238,6 +1244,7 @@ def cosine_similarity_topk(
 
 def idxs_sims_to_sorted_list(idxs: np.ndarray,
                              sims: np.ndarray,
+                             sims_mult: int = 100,
                              remove_dupes=True,
                              ) -> List[Tuple]:
     
@@ -1256,7 +1263,7 @@ def idxs_sims_to_sorted_list(idxs: np.ndarray,
     assert idxs.shape == sims.shape, f'Shape mismatch between indexes array and similarities array: {idxs.shape} != {sims.shape}'
 
     flat_idxs = [x for row in idxs.tolist() for x in row]
-    flat_sims = [x for row in sims.tolist() for x in row]
+    flat_sims = [x * sims_mult for row in sims.tolist() for x in row]
 
     tv = idxs.shape[0]
 
