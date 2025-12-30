@@ -427,7 +427,9 @@ for fa in tqdm.tqdm(filez):
 
 ***
 
-## Main functions reference list
+## midisim functions reference lists
+
+### Main functions
 
 - ```midisim.midisim.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
 - ```midisim.midisim.cosine_similarity_topk``` — *Compute cosine similarities between a query embedding and a set of embeddings and return the top‑K matches.*  
@@ -443,6 +445,14 @@ for fa in tqdm.tqdm(filez):
 - ```midisim.midisim.pad_and_mask``` — *Pad a batch of variable-length token sequences to a common length and produce an attention/mask tensor indicating real tokens vs padding.*  
 - ```midisim.midisim.print_sorted_idxs_sims_list``` — *Pretty-print a sorted list of (index, similarity) pairs, optionally annotating entries with filenames or metadata.*  
 - ```midisim.midisim.save_embeddings``` — *Save a list of name strings and their corresponding embedding vectors into a structured NumPy array and optionally persist it to disk.*
+
+### Helper functions
+
+- ```get_package_models``` — *Return a sorted list of packaged model files and their paths.*
+- ```get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
+- ```get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
+- ```normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
+- ```install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
 
 ***
 
