@@ -11604,9 +11604,10 @@ def create_files_list(datasets_paths=['./'],
  
     for dataset_addr in datasets_paths:
         
-        print('=' * 70)
-        print('Processing', dataset_addr)
-        print('=' * 70)
+        if verbose:
+            print('=' * 70)
+            print('Processing', dataset_addr)
+            print('=' * 70)
         
         for dirpath, dirnames, filenames in tqdm.tqdm(os.walk(dataset_addr), disable=not verbose):
                 
