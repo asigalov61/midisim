@@ -207,8 +207,6 @@ autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 # Load main midisim module
 import midisim
 
-# ================================================================================================
-
 # Import helper modules
 import os
 import tqdm
