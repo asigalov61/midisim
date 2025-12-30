@@ -52,6 +52,7 @@ import time
 import importlib.resources as pkg_resources
 
 from . import models
+from . import embeddings
 
 from typing import List, Dict
 
