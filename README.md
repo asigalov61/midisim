@@ -492,10 +492,10 @@ for fa in tqdm.tqdm(filez):
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim-samples (Revision 6394ee9) },
+	title        = { midisim-samples (Revision 79afcc1) },
 	year         = 2025,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisim-samples },
-	doi          = { 10.57967/hf/7387 },
+	doi          = { 10.57967/hf/7388 },
 	publisher    = { Hugging Face }
 }
 ```
