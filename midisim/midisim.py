@@ -1324,8 +1324,8 @@ def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
 ###################################################################################
 
 @lru_cache(maxsize=1)
-def get_corpus_midis(corpus_midis_dirs_tuple : Tuple,
-                     verbose : = True
+def get_corpus_midis(corpus_midis_dirs_tuple: Tuple,
+                     verbose: bool = True
                      ) -> Dict:
     
     """
@@ -1359,11 +1359,11 @@ def get_corpus_midis(corpus_midis_dirs_tuple : Tuple,
 
 ###################################################################################
 
-def copy_corpus_files(sorted_idxs_sims_list : list[list],
-                      corpus_midis_dirs : list = ['./Corpus MIDIs Dir/'],
-                      main_output_dir : str = './Corpus Matches Dir/',
-                      sub_output_dir : str = 'Corpus MIDI Name',
-                      copy_original_midi : bool = True,
+def copy_corpus_files(sorted_idxs_sims_list: list[list],
+                      corpus_midis_dirs: list = ['./Corpus MIDIs Dir/'],
+                      main_output_dir: str = './Corpus Matches Dir/',
+                      sub_output_dir: str = 'Corpus MIDI Name',
+                      copy_original_midi: bool = True,
                       verbose: bool = True
                      ) -> str:
 
