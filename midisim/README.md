@@ -14,7 +14,7 @@
 
 ***
 
-## Pre-trained models
+## [Pre-trained models](https://huggingface.co/projectlosangeles/midisim)
 
 * ```midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth``` - Very fast and accurate small model, suitable for all tasks. This model is included in PyPI package or it can be downloaded from Hugging Face
 * ```midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth``` - Fast large model for more nuanced embeddings generation. Download checkpoint from Hugging Face
@@ -23,7 +23,7 @@
 
 ***
 
-## Pre-computed embeddings sets
+## [Pre-computed embeddings sets](https://huggingface.co/datasets/projectlosangeles/midisim-embeddings)
 
 ### For small pre-trained model
 
@@ -41,7 +41,15 @@
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
 
-#### Pre-computed embeddings MIDI source dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+#### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+
+***
+
+### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisim-samples)
+
+```midisim-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisim music discovery pipeline with both pre-trained models
+
+#### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
 ***
 
@@ -132,7 +140,7 @@ corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, cor
 # ================================================================================================
 
 # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
-out_dir_path = copy_corpus_files(corpus_matches_list)
+out_dir_path = midisim.copy_corpus_files(corpus_matches_list)
 
 # ================================================================================================
 ```
@@ -284,6 +292,137 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 # You now can use this saved custom MIDI corpus NumPy file with midisim.load_embeddings()
 # and the rest of the pipeline outlined in the general use section above
+```
+
+***
+
+## Music discovery pipeline
+Here is a complete MIDI music discovery pipeline example using midisim and [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+
+### Install midisim and discovermidi PyPI packages
+
+```sh
+!pip install -U midisim
+```
+
+```sh
+!pip install -U discovermidi
+```
+
+### Download and unzip Discover MIDI Dataset
+
+```python
+import discovermidi
+from discovermidi import fast_parallel_extract
+
+discovermidi.download_dataset()
+
+fast_parallel_extract.fast_parallel_extract()
+```
+
+### Choose and prepare one midisim model and corresponding embeddings set
+
+#### Small model
+
+```python
+model_ckpt = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
+model_depth = 8
+
+embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy'
+```
+
+#### Large model
+
+```python
+model_ckpt = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
+model_depth = 16
+
+embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy'
+```
+
+### Create Master MIDI dataset directory and upload your source/master MIDIs in it
+
+```python
+import os
+
+os.makedirs('./Master-MIDI-Dataset/', exist_ok=True)
+```
+
+### Initialize midisim, download and load chosen midisim model and embeddings set
+
+```python
+# Import main midisim module
+import midisim
+
+# Download embeddings from Hugging Face
+emb_path = midisim.download_embeddings(filename=embeddings_file)
+
+# Load downloaded embeddings corpus
+corpus_midi_names, corpus_emb = midisim.load_embeddings(embeddings_path=emb_path)
+
+# Download midisim model from Hugging Face
+model_path = midisim.download_model(filename=model_ckpt)
+
+# Load midisim model
+model, ctx, dtype = midisim.load_model(model_path,
+                                       depth=model_depth
+                                      )
+```
+
+### Create Master MIDI dataset files list
+
+```python
+filez = midisim.TMIDIX.create_files_list(['./Master-MIDI-Dataset/'])
+```
+
+### Launch the search
+
+```python
+import os
+import tqdm
+
+for fa in tqdm.tqdm(filez):
+    
+    # Load source MIDI
+    input_toks_seqs = midisim.midi_to_tokens(fa, verbose=False)
+
+    if input_toks_seqs:
+    
+        # ================================================================================================
+        # Calculate and analyze embeddings
+        # ================================================================================================
+        
+        # Compute source/query embeddings
+        query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs, verbose=False)
+    
+        # Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
+        idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb, verbose=False)
+       
+        # ================================================================================================
+        # Processs, print and save results
+        # ================================================================================================
+         
+        # Convert the results to sorted list with transpose values
+        idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
+       
+        # Print corpus matches (and optionally) convert the final result to a handy list for further processing
+        corpus_matches_list = midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list,
+                                                                  corpus_midi_names,
+                                                                  return_as_list=True
+                                                                 )
+         
+        # ================================================================================================
+        # Copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
+        # ================================================================================================
+        
+        # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
+        out_dir_path = midisim.copy_corpus_files(corpus_matches_list,
+                                                 corpus_midis_dirs=['./Discover-MIDI-Dataset/MIDIs/'],
+                                                 main_output_dir='Output-MIDI-Dataset',
+                                                 sub_output_dir=os.path.splitext(os.path.basename(fa))[0],
+                                                 verbose=False
+                                                )
+        # ================================================================================================
 ```
 
 ***
