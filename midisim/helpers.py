@@ -49,10 +49,13 @@ import shutil
 import subprocess
 import time
 
+import hashlib
+
 import importlib.resources as pkg_resources
 
 from . import models
 from . import embeddings
+from .TMIDIX import midi2score, score2midi
 
 from typing import List, Dict
 
@@ -109,6 +112,80 @@ def get_package_embeddings() -> List[Dict]:
                 embeddings_dict.append(mdic)
                 
     return sorted(embeddings_dict, key=lambda x: x['embeddings'])
+
+###################################################################################
+
+def get_normalized_midi_md5_hash(midi_file: str) -> Dict:
+    
+    """
+    Helper function which computes normalized MD5 hash for any MIDI file
+    
+    Returns
+    -------
+    Dictionary with MIDI file name, original MD5 hash and normalized MD5 hash
+    {'midi_name', 'original_md5', 'normalized_md5'}
+    """
+
+    bfn = os.path.basename(midi_file)
+    fn = os.path.splitext(bfn)[0]
+    
+    midi_data = open(midi_file, 'rb').read()
+    
+    old_md5 = hashlib.md5(midi_data).hexdigest()
+    
+    score = midi2score(midi_data, do_not_check_MIDI_signature=True)
+        
+    norm_midi = score2midi(score)
+    
+    new_md5 = hashlib.md5(norm_midi).hexdigest()
+    
+    output_dic = {'midi_name': fn,
+                  'original_md5': old_md5,
+                  'normalized_md5': new_md5
+                 }
+
+    return output_dic
+
+###################################################################################
+
+def normalize_midi_file(midi_file: str,
+                        output_dir: str = '',
+                        output_file_name: str = ''
+                        ) -> str:
+    
+    """
+    Helper function which normalizes any MIDI file and writes it to disk
+    
+    Returns
+    -------
+    Path string to a written normalized MIDI file
+    """
+
+    if not output_file_name:
+        output_file_name = os.path.basename(midi_file)
+
+    if not output_dir:
+        output_dir = os.getcwd()
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    midi_path = os.path.join(output_dir, output_file_name)
+
+    if os.path.exists(midi_path):
+        fn = os.path.splitext(output_file_name)[0]
+        output_file_name = f'{fn}_normalized.mid'
+        midi_path = os.path.join(output_dir, output_file_name)
+    
+    midi_data = open(midi_file, 'rb').read()
+    
+    score = midi2score(midi_data, do_not_check_MIDI_signature=True)
+        
+    norm_midi = score2midi(score)
+
+    with open(midi_path, 'wb') as fi:
+        fi.write(norm_midi)
+
+    return midi_path
 
 ###################################################################################
 
