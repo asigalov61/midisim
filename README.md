@@ -237,9 +237,7 @@ sorted_midi_corpus = sorted(zip(midi_corpus_file_names, midi_corpus_tokens), key
 midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
 
 # ================================================================================================
-
 # Now you are ready to generate embeddings as follows:
-
 # ================================================================================================
 
 # Load main midisim model
