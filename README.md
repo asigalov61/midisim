@@ -288,6 +288,81 @@ midisim.save_embeddings(midi_corpus_file_names,
 
 ***
 
+## Music discovery pipeline
+Here is a complete MIDI music discovery pipeline example using midisim and [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+
+### Install midisim and discovermidi PyPI packages
+
+```sh
+!pip install -U midisim
+```
+
+```sh
+!pip install discovermidi
+```
+
+### Download and unzip Discover MIDI Dataset
+
+```python
+import discovermidi
+from discovermidi import fast_parallel_extract
+
+discovermidi.download_dataset()
+
+fast_parallel_extract.fast_parallel_extract()
+```
+
+### Choose and prepare one midisim model and corresponding embeddings set
+
+#### Small model
+
+```python
+model_ckpt = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
+model_depth = 8
+
+embeddings_file = 'midisim-embeddings/discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy'
+```
+
+#### Large model
+
+```python
+model_ckpt = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
+model_depth = 16
+
+embeddings_file = 'midisim-embeddings/discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy'
+```
+
+### Create Master MIDI dataset directory and upload your source/master MIDIs in it
+
+```python
+import os
+
+os.makedirs('./Master-MIDI-Dataset/')
+```
+
+### Initialize midisim, download and load chosen midisim model and embeddings set
+
+```python
+# Import main midisim module
+import midisim
+
+# Download embeddings from Hugging Face
+emb_path = midisim.download_embeddings(filename=embeddings_file)
+
+# Load downloaded embeddings corpus
+corpus_midi_names, corpus_emb = midisim.load_embeddings(embeddings_path=emb_path)
+
+# Download midisim model from Hugging Face
+model_path = midisim.download_model(filename=model_ckpt)
+
+# Load midisim model
+model, ctx, dtype = midisim.load_model(model_path,
+                                       depth=model_depth
+                                      )
+```
+
+***
+
 ## Main functions reference list
 
 - ```midisim.midisim.copy_corpus_files``` — *Copy or synchronize MIDI corpus files from a source directory to a target corpus location.*  
