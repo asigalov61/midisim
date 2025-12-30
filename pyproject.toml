@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "midisim"
-version = "25.12.52"
+version = "25.12.51"
 description = "Calculate, search, and analyze MIDI-to-MIDI similarity at scale"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -24,7 +24,7 @@ dependencies = [
   "einx",
   "torch-summary",
   "matplotlib",
-  "numpy"
+  "numpy==1.26.4"
 ]
 
 keywords = [
