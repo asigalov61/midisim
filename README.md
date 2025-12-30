@@ -9,7 +9,7 @@
 
 * Ultra-fast and flexible GPU/CPU MIDI-to-MIDI similarity calculation, search and analysis
 * Quality pre-trained models and comprehensive pre-computed embeddings sets
-* Stand-alone, versatile, and very flexible codebase for general or custom MIDI-to-MIDI similarity tasks
+* Stand-alone, versatile, and extensive codebase for general or custom MIDI-to-MIDI similarity tasks
 * Full cross-platform compatibility and support
 
 ***
