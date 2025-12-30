@@ -472,7 +472,7 @@ def save_embeddings(embeddings_name_strings: list[str],
         print('=' * 70)
         print('Saving embeddings...')
         print('=' * 70)
-        print("save_embeddings: called with parameters:")
+        print("[save_embeddings]: called with parameters:")
         print(f"  number of name strings provided: {len(embeddings_name_strings)}")
         print(f"  output_file_name: {output_file_name}")
         print(f"  name_strings_key: {name_strings_key}")
@@ -484,68 +484,68 @@ def save_embeddings(embeddings_name_strings: list[str],
     # Convert torch tensor to numpy if needed
     if type(embeddings) == torch.Tensor:
         if verbose:
-            print("save_embeddings: embeddings is a torch.Tensor, converting to numpy array with .numpy()")
+            print("[save_embeddings]: embeddings is a torch.Tensor, converting to numpy array with .numpy()")
         embeddings = embeddings.cpu().numpy()
     elif type(embeddings) == list:
         if verbose:
-                print("save_embeddings: embeddings is a list, converting to numpy array")
+                print("[save_embeddings]: embeddings is a list, converting to numpy array")
         embeddings = np.array(embeddings)
     else:
         if verbose:
-            print(f"save_embeddings: embeddings is of type {type(embeddings)}; no conversion performed")
+            print(f"[save_embeddings]: embeddings is of type {type(embeddings)}; no conversion performed")
 
     # Basic shape and length checks
     try:
         n = len(embeddings_name_strings)
     except Exception as e:
         if verbose:
-            print("save_embeddings: ERROR computing length of embeddings_name_strings:", e)
+            print("[save_embeddings]: ERROR computing length of embeddings_name_strings:", e)
         raise
 
     try:
         D = embeddings.shape[1]
     except Exception as e:
         if verbose:
-            print("save_embeddings: ERROR reading embeddings.shape[1]:", e)
+            print("[save_embeddings]: ERROR reading embeddings.shape[1]:", e)
             print("  embeddings.shape is:", getattr(embeddings, "shape", None))
         raise
 
     if verbose:
-        print(f"save_embeddings: determined n = {n} (number of entries)")
-        print(f"save_embeddings: determined D = {D} (embedding dimensionality)")
-        print("save_embeddings: preparing numpy structured dtype for storage")
+        print(f"[save_embeddings]: determined n = {n} (number of entries)")
+        print(f"[save_embeddings]: determined D = {D} (embedding dimensionality)")
+        print("[save_embeddings]: preparing numpy structured dtype for storage")
 
     dtype = np.dtype([
         (name_strings_key, object),              # variable-length Python strings
-        (embeddings_key, np.float32, (D,))       # fixed-size embedding vector
+        (embeddings_key, embeddings.dtype, (D,))       # fixed-size embedding vector
     ])
 
     if verbose:
-        print("save_embeddings: dtype constructed as:")
+        print("[save_embeddings]: dtype constructed as:")
         print(f"  {dtype}")
 
     # Create empty structured array
     if verbose:
-        print(f"save_embeddings: allocating empty numpy array of length {n} with dtype above")
+        print(f"[save_embeddings]: allocating empty numpy array of length {n} with dtype above")
     arr = np.empty(n, dtype=dtype)
 
     # Fill name strings
     if verbose:
-        print("save_embeddings: assigning name strings to structured array")
+        print("[save_embeddings]: assigning name strings to structured array")
         print(f"  first 5 name strings (or fewer): {embeddings_name_strings[:5]}")
     arr[name_strings_key] = embeddings_name_strings
 
     # Cast embeddings to float32 and assign
     if verbose:
-        print("save_embeddings: casting embeddings to np.float32 and assigning to structured array")
+        print("[save_embeddings]: assigning embeddings to structured array")
         print(f"  embeddings original dtype: {getattr(embeddings, 'dtype', 'unknown')}")
         print(f"  embeddings shape: {getattr(embeddings, 'shape', 'unknown')}")
-    arr[embeddings_key] = embeddings.astype(np.float32)
+    arr[embeddings_key] = embeddings
 
     if return_merged_array:
         if verbose:
             print('=' * 70)
-            print("save_embeddings: return_merged_array is True; returning the merged structured array without saving to disk")
+            print("[save_embeddings]: return_merged_array is True; returning the merged structured array without saving to disk")
             print(f"  returning array with length {len(arr)} and dtype {arr.dtype}")
             print('=' * 70)
             print('Done!')
@@ -555,10 +555,10 @@ def save_embeddings(embeddings_name_strings: list[str],
     # Save to disk
     if verbose:
         print('=' * 70)
-        print(f"save_embeddings: return_merged_array is False; saving structured array to '{output_file_name}' using np.save")
+        print(f"[save_embeddings]: return_merged_array is False; saving structured array to '{output_file_name}' using np.save")
     np.save(output_file_name, arr)
     if verbose:
-        print(f"save_embeddings: save complete. File written: {output_file_name}")
+        print(f"[save_embeddings]: save complete. File written: {output_file_name}")
         print(f"  saved array length: {len(arr)}; dtype: {arr.dtype}")
         print('=' * 70)
         print('Done!')
