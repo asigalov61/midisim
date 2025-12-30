@@ -132,7 +132,7 @@ corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, cor
 # ================================================================================================
 
 # Copy matched corpus MIDI to a desired directory for easy evaluation and analysis
-out_dir_path = copy_corpus_files(corpus_matches_list)
+out_dir_path = midisim.copy_corpus_files(corpus_matches_list)
 
 # ================================================================================================
 ```
