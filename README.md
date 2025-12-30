@@ -321,10 +321,10 @@ midisim.save_embeddings(midi_corpus_file_names,
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim (Revision 65e7442) },
+	title        = { midisim (Revision 707e311) },
 	year         = 2025,
 	url          = { https://huggingface.co/projectlosangeles/midisim },
-	doi          = { 10.57967/hf/7366 },
+	doi          = { 10.57967/hf/7383 },
 	publisher    = { Hugging Face }
 }
 ```
@@ -332,10 +332,10 @@ midisim.save_embeddings(midi_corpus_file_names,
 ```bibtex
 @misc{project_los_angeles_2025,
 	author       = { Project Los Angeles },
-	title        = { midisim-embeddings (Revision 0fe903d) },
+	title        = { midisim-embeddings (Revision 8ebb453) },
 	year         = 2025,
 	url          = { https://huggingface.co/datasets/projectlosangeles/midisim-embeddings },
-	doi          = { 10.57967/hf/7373 },
+	doi          = { 10.57967/hf/7382 },
 	publisher    = { Hugging Face }
 }
 ```
