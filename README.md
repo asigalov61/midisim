@@ -448,11 +448,11 @@ for fa in tqdm.tqdm(filez):
 
 ### Helper functions
 
-- ```get_package_models``` — *Return a sorted list of packaged model files and their paths.*
-- ```get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
-- ```get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
-- ```normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
-- ```install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
+- ```midisim.helpers.get_package_models``` — *Return a sorted list of packaged model files and their paths.*
+- ```midisim.helpers.get_package_embeddings``` — *Return a sorted list of packaged embedding files and their paths.*
+- ```midisim.helpers.get_normalized_midi_md5_hash``` — *Compute original and normalized MD5 hashes for a MIDI file.*
+- ```midisim.helpers.normalize_midi_file``` — *Normalize a MIDI file and write the result to disk.*
+- ```midisim.helpers.install_apt_package``` — *Idempotently install an apt package with retries and optional python‑apt.*
 
 ***
 
