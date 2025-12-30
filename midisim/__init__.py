@@ -5,4 +5,6 @@ from .midisim import get_embeddings_bf16, cosine_similarity_topk
 from .midisim import idxs_sims_to_sorted_list, print_sorted_idxs_sims_list
 from .midisim import copy_corpus_files
 
-from .helpers import get_package_models, get_package_embeddings, install_apt_package
+from .helpers import get_package_models, get_package_embeddings
+from .helpers import get_normalized_midi_md5_hash, normalize_midi_file 
+from .helpers import install_apt_package
