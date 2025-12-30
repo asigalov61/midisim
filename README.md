@@ -82,7 +82,7 @@ emb_path = midisim.download_embeddings()
 
 # Option 2: use custom pre-computed embeddings corpus
 # See custom embeddings generation section of this README for details
-# emb_path = './cusomt_midis_embeddings_corpus.npy'
+# emb_path = './custom_midis_embeddings_corpus.npy'
 
 # Load downloaded embeddings corpus
 corpus_midi_names, corpus_emb = midisim.load_embeddings(emb_path)
