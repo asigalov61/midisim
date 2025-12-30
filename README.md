@@ -14,7 +14,7 @@
 
 ***
 
-## Pre-trained models
+## [Pre-trained models](https://huggingface.co/projectlosangeles/midisim)
 
 * ```midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth``` - Very fast and accurate small model, suitable for all tasks. This model is included in PyPI package or it can be downloaded from Hugging Face
 * ```midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth``` - Fast large model for more nuanced embeddings generation. Download checkpoint from Hugging Face
@@ -23,7 +23,7 @@
 
 ***
 
-## Pre-computed embeddings sets
+## [Pre-computed embeddings sets](https://huggingface.co/datasets/projectlosangeles/midisim-embeddings)
 
 ### For small pre-trained model
 
@@ -41,7 +41,15 @@
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
 
-#### Pre-computed embeddings MIDI source dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+#### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
+
+***
+
+### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisim-samples)
+
+```midisim-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisim music discovery pipeline with both pre-trained models
+
+#### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
 ***
 
