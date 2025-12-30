@@ -71,7 +71,7 @@ import os, copy, math, shutil
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Union, Tuple, Dict
 
 from functools import lru_cache
 
@@ -1324,7 +1324,9 @@ def print_sorted_idxs_sims_list(sorted_idxs_sims_list: list,
 ###################################################################################
 
 @lru_cache(maxsize=1)
-def get_corpus_midis(corpus_midis_dirs_tuple, verbose=True):
+def get_corpus_midis(corpus_midis_dirs_tuple : Tuple,
+                     verbose : = True
+                     ) -> Dict:
     
     """
     Returns corpus_midis_dic with LRU caching.
@@ -1342,7 +1344,7 @@ def get_corpus_midis(corpus_midis_dirs_tuple, verbose=True):
 
     # Create dict: basename → full path
 
-    if verobse:
+    if verbose:
         print('Converting files list to dict...')
         
     corpus_midis_dic = {
@@ -1350,7 +1352,7 @@ def get_corpus_midis(corpus_midis_dirs_tuple, verbose=True):
         for f in corpus_midis_list
     }
 
-    if verobse:
+    if verbose:
         print('Done!')
     
     return corpus_midis_dic
