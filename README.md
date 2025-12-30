@@ -38,11 +38,26 @@
 # Import main midisim module
 import midisim
 
-# Download sample pre-computed embeddings corpus
+# ================================================================================================
+
+# Prepare midisim embeddings
+
+# Option 1: Download sample pre-computed embeddings corpus from Hugging Face
 emb_path = midisim.download_embeddings()
 
+# Option 2: Use sample pre-computed embeddings corpus included in midisim PyPI package
+# emb_path = get_package_embeddings()[0]['path']
+
+# Option 3: use custom pre-computed embeddings corpus
+# See custom embeddings generation section of this README for details
+emb_path = './cusomt_midis_embeddings_corpus.npy'
+
 # Load downloaded embeddings corpus
-corpus_midi_names, corpus_emb = midisim.load_embeddings()
+corpus_midi_names, corpus_emb = midisim.load_embeddings(emb_path)
+
+================================================================================================
+
+# Prepare midisim model
 
 # Download main pre-trained midisim model
 model_path = midisim.download_model()
@@ -64,6 +79,9 @@ idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
 
 # Print corpus matches (and optionally) convert the final result to a handy list for further processing
 corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+
+# Optionally copy matched corpus MIDI to a desired directory for easy evaluation and analysis
+out_dir_path = copy_corpus_files(corpus_matches_list)
 ```
 
 ### Raw/custom use example
