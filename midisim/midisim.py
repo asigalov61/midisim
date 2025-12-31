@@ -804,6 +804,75 @@ def masked_mean_pool(
 
 ###################################################################################
 
+def masked_weighted_mean_pool(
+    token_embs: Tensor,
+    valid_mask: Tensor,
+    token_ids: Optional[Tensor] = None,
+    token_type_weights: Optional[Tuple[float, float, float]] = None,
+    dim: int = 1,
+    verbose: bool = False,
+    ) -> Tensor:
+    
+    """
+    Weighted mean pooling across tokens. If token_ids is provided, token types are
+    inferred using the same ranges as the reference code:
+      - onset:   token_id in [0, 127]
+      - duration:token_id in [128, 255]
+      - pitch:   token_id in [256, 383]
+    token_type_weights: (onset_w, duration_w, pitch_w). If None, defaults to (1.0,1.0,1.0)
+    The function multiplies each token embedding by its scalar weight and divides
+    by the sum of weights for valid tokens per sequence.
+    """
+    
+    B, L, D = token_embs.shape
+    device = token_embs.device
+    dtype = token_embs.dtype
+
+    if token_ids is None:
+        # No token-level ids available: fallback to simple masked mean
+        if verbose:
+            tqdm.tqdm.write("[masked_weighted_mean_pool] token_ids is None, falling back to masked_mean_pool")
+        return masked_mean_pool(token_embs, valid_mask, dim=dim, verbose=verbose)
+
+    # Default weights
+    if token_type_weights is None:
+        onset_w, duration_w, pitch_w = 1.0, 1.0, 1.0
+    else:
+        onset_w, duration_w, pitch_w = token_type_weights
+
+    # Build per-type boolean masks based on token id values (same ranges as reference)
+    onset_mask = (token_ids >= 0) & (token_ids < 128)
+    duration_mask = (token_ids >= 128) & (token_ids < 256)
+    pitch_mask = (token_ids >= 256) & (token_ids < 384)
+
+    # Combine with valid_mask to ignore padding positions
+    onset_mask = onset_mask & valid_mask
+    duration_mask = duration_mask & valid_mask
+    pitch_mask = pitch_mask & valid_mask
+
+    # Build per-token scalar weight tensor (B, L)
+    w = torch.ones((B, L), device=device, dtype=dtype)
+    if onset_w != 1.0:
+        w = torch.where(onset_mask, torch.tensor(onset_w, device=device, dtype=dtype), w)
+    if duration_w != 1.0:
+        w = torch.where(duration_mask, torch.tensor(duration_w, device=device, dtype=dtype), w)
+    if pitch_w != 1.0:
+        w = torch.where(pitch_mask, torch.tensor(pitch_w, device=device, dtype=dtype), w)
+
+    # Zero out weights for padding positions
+    valid_mask_f = valid_mask.to(dtype)  # (B, L)
+    w = w * valid_mask_f  # (B, L)
+
+    # Weighted sum and normalization
+    denom = w.sum(dim=1, keepdim=True).clamp(min=1e-6)  # (B, 1)
+    w_exp = w.unsqueeze(-1)  # (B, L, 1)
+    summed = (token_embs * w_exp).sum(dim=dim)  # (B, D)
+    pooled = summed / denom  # (B, D)
+
+    return pooled
+
+###################################################################################
+
 def pad_and_mask(
     sequences: List[List[int]],
     pad_idx: int = 385,
@@ -837,39 +906,57 @@ def pad_and_mask(
             - mask: BoolTensor of shape (B, T) where True indicates a real token.
     """
     
-    # Compute effective lengths after truncation
-    if seq_len is not None:
-        target_len = seq_len
-        lengths = [min(len(s), seq_len) for s in sequences]
+    # Fast path for empty batch
+    if not sequences:
+        empty = torch.empty((0, 0), dtype=torch.long, device=device)
+        empty_mask = torch.empty((0, 0), dtype=torch.bool, device=device)
+        return empty, empty_mask
+
+    # Compute lengths and the batch maximum length
+    lengths = [len(s) for s in sequences]
+    batch_max = max(lengths)
+
+    # If seq_len is given, only use it to cap lengths; but if the batch max is smaller,
+    # use the smaller value to avoid extra allocation/work.
+    if seq_len is None:
+        target_len = batch_max
     else:
-        lengths = [len(s) for s in sequences]
-        target_len = max(lengths) if lengths else 0
+        target_len = min(seq_len, batch_max)
 
     b = len(sequences)
+    if target_len == 0:
+        x = torch.full((b, 0), pad_idx, dtype=torch.long, device=device)
+        mask = torch.zeros((b, 0), dtype=torch.bool, device=device)
+        return x, mask
+
     x = torch.full((b, target_len), pad_idx, dtype=torch.long, device=device)
     mask = torch.zeros((b, target_len), dtype=torch.bool, device=device)
 
+    # iterate with optional progress display
     iterator = enumerate(sequences)
     if verbose:
         iterator = enumerate(tqdm.tqdm(sequences, disable=not verbose, desc="Pad & mask"))
 
     for i, seq in iterator:
-        if target_len == 0:
+        if not seq:
             continue
-        # Truncate if necessary
-        if seq_len is not None:
-            seq = seq[:seq_len]
-        if len(seq) == 0:
-            continue
-        seq_tensor = torch.tensor(seq, dtype=torch.long, device=device)
-        L = min(len(seq), target_len)
+        # Only truncate if seq is longer than the chosen target_len
+        L = len(seq)
+        if L > target_len:
+            L = target_len
+            # slice once to avoid creating a larger tensor then slicing
+            seq_slice = seq[:L]
+            seq_tensor = torch.tensor(seq_slice, dtype=torch.long, device=device)
+        else:
+            seq_tensor = torch.tensor(seq, dtype=torch.long, device=device)
+
         x[i, :L] = seq_tensor[:L]
         mask[i, :L] = True
 
     if verbose:
         tqdm.tqdm.write(
             f"[pad_and_mask] batch_size={b}, target_len={target_len}, "
-            f"min_len={min(lengths) if lengths else 0}, max_len={max(lengths) if lengths else 0}"
+            f"min_len={min(lengths)}, max_len={max(lengths)}"
         )
 
     return x, mask
@@ -886,56 +973,121 @@ def get_embeddings_bf16(
     save_file_path: str = "saved_embeddings.npy",
     device: Optional[torch.device] = None,
     normalize: bool = False,
-    pooling: str = "auto",  # "auto" | "mean"
+    pooling: str = "auto",  # "auto" | "mean" | "weighted_mean"
+    token_type_weights: Optional[Tuple[float, float, float]] = None,  # (onset_w, duration_w, pitch_w)
     use_bfloat16: bool = True,  # enable bfloat16 autocast when possible
     return_dtype: str = "float32",  # "float32" or "float16" for returned embeddings
     return_numpy: bool = False,
     verbose: bool = True,
+    show_progress_bar: bool = True
     ) -> Union[Tensor, np.ndarray]:
-    
+
     """
-    Compute embeddings for a list of token sequences with optional bfloat16/autocast,
-    pooling, normalization, and progress reporting.
-
-    This function iterates over `sequences` in batches, pads/truncates them,
-    runs the model forward (requesting embeddings via `return_embeddings=True`),
-    optionally pools per-token outputs to per-sequence embeddings, normalizes,
-    and accumulates results on CPU. It supports automatic mixed precision
-    (bfloat16) where available and can periodically save intermediate results.
-
-    Important assumptions about `model`:
-      - The model accepts inputs `(x, return_embeddings=True, mask=mask)` where
-        `x` is a LongTensor of token ids and `mask` is a boolean tensor.
-      - When `return_embeddings=True`, the model returns either:
-          * a 2D tensor (B, D) of already-pooled embeddings, or
-          * a 3D tensor (B, L, D) of per-token embeddings.
-
+    Compute embeddings for a list of token sequences using a PyTorch model with optional bfloat16/autocast,
+    pooling, normalization, and periodic saving.
+    
+    This function batches input token id sequences, pads/truncates them to a fixed length, runs the model
+    in evaluation mode under `torch.no_grad()` and optional mixed-precision autocast, and returns a single
+    tensor (or NumPy array) containing per-sequence embeddings. The model is expected to accept a LongTensor
+    of token ids `x` and a boolean mask `mask` and to return either:
+      - a 2-D tensor `(B, D)` of already-pooled embeddings, or
+      - a 3-D tensor `(B, L, D)` of per-token embeddings (which will be pooled according to `pooling`).
+    
+    Key behaviors:
+    - Sequences are padded with `seq_pad_idx` and masked so padding does not affect pooling.
+    - If `seq_len` is provided, sequences longer than `seq_len` are truncated; otherwise the batch max length is used.
+    - Mixed-precision autocast is used when `use_bfloat16` is True and supported by the device; the function
+      falls back to the default autocast or no autocast if unavailable.
+    - Supports three pooling modes for per-token embeddings:
+        - `"auto"` or `"mean"`: simple masked mean pooling across tokens.
+        - `"weighted_mean"`: weighted mean pooling by token type (onset/duration/pitch) inferred from token ids;
+          weights are provided via `token_type_weights` and padding tokens are ignored.
+    - Optionally L2-normalizes embeddings (in float32) when `normalize=True`.
+    - Returned embeddings can be cast to `float16` for storage/transfer via `return_dtype`.
+    - Embeddings are collected on CPU; intermediate results can be periodically saved to `save_file_path`.
+    - If `return_numpy=True`, a NumPy array is returned; otherwise a CPU `torch.Tensor` is returned.
+    
     Args:
-        model: A PyTorch model with a forward signature compatible with the
-            assumptions above.
-        sequences: List of token id sequences to embed.
-        seq_len: Optional fixed sequence length for truncation/padding.
-        seq_pad_idx: Sequences pad index value.
-        batch_size: Number of sequences per forward pass.
-        save_every_num_batches: If > 0, save intermediate concatenated embeddings
-            to `save_file_path` every `save_every_num_batches` batches.
-        save_file_path: Path used by `np.save` to persist intermediate results.
-        device: Optional device to run the model on. If None, the device of the
-            first model parameter is used.
-        normalize: If True, L2-normalize embeddings (performed in float32).
-        pooling: Pooling strategy for per-token outputs. "auto" or "mean" are
-            supported; "auto" will use mean pooling for 3D outputs.
-        use_bfloat16: If True, attempt to use `torch.amp.autocast` with bfloat16
-            dtype when the device supports it; falls back gracefully.
-        return_dtype: "float32" or "float16" for the dtype of returned embeddings.
-        return_numpy: If True, return a NumPy array instead of a torch.Tensor.
-        verbose: If True, show progress bars and concise status messages.
-
-    Returns:
-        Either a torch.Tensor of shape (N, D) on CPU or a NumPy array (if
-        `return_numpy` is True). Dtype follows `return_dtype`.
-    """
+        model (torch.nn.Module):
+            PyTorch model used to compute embeddings. The model will be moved to `device` (or its current
+            parameter device if `device` is None) and set to `eval()` for inference. The forward call must
+            accept `x` (LongTensor) and `mask` (BoolTensor) and return embeddings when called with
+            `return_embeddings=True`.
+        sequences (List[List[int]]):
+            Batch of token id sequences (each sequence is a list of ints). Can be empty; an empty result
+            with shape `(0, 0)` will be returned in that case.
+        seq_len (Optional[int], default=3072):
+            Target sequence length for truncation/padding. If None, the maximum sequence length in the
+            current batch is used.
+        seq_pad_idx (int, default=385):
+            Token id used for padding positions.
+        batch_size (int, default=64):
+            Number of sequences processed per forward pass.
+        save_every_num_batches (int, default=-1):
+            If > 0, the function will save accumulated embeddings to `save_file_path` every
+            `save_every_num_batches` batches. A non-positive value disables periodic saving.
+        save_file_path (str, default="saved_embeddings.npy"):
+            File path used by `np.save` when periodic saving is enabled.
+        device (Optional[torch.device], default=None):
+            Device to run the model and tensors on. If None, the device of the model parameters is used.
+        normalize (bool, default=False):
+            If True, L2-normalize each embedding vector (done in float32 for numerical stability).
+        pooling (str, default="auto"):
+            Pooling strategy applied when model returns per-token embeddings:
+              - "auto" or "mean": masked mean pooling.
+              - "weighted_mean": weighted mean pooling by token type using `token_type_weights`.
+            Any other value raises `ValueError`.
+        token_type_weights (Optional[Tuple[float, float, float]], default=None):
+            Per-token-type weights `(onset_w, duration_w, pitch_w)` used when `pooling="weighted_mean"`.
+            If None, defaults to `(1.0, 1.0, 1.0)`. Token type ranges are inferred as:
+              onset:   token_id in [0, 127]
+              duration:token_id in [128, 255]
+              pitch:   token_id in [256, 383]
+        use_bfloat16 (bool, default=True):
+            If True, attempts to use `torch.bfloat16` autocast for the device; falls back gracefully if not supported.
+        return_dtype (str, default="float32"):
+            Data type for returned embeddings: `"float32"` or `"float16"`. Internally embeddings are normalized
+            in float32; casting to float16 happens just before collecting results if requested.
+        return_numpy (bool, default=False):
+            If True, the final result is returned as a NumPy array; otherwise a CPU `torch.Tensor` is returned.
+        verbose (bool, default=True):
+            If True, prints progress and short diagnostic messages via `tqdm`.
+        show_progress_bar (bool, default=True)
+            If True, displays tqdm progress bar.
     
+    Returns:
+        Union[torch.Tensor, numpy.ndarray]:
+            - If `return_numpy` is False: a CPU `torch.Tensor` of shape `(N, D)` and dtype `torch.float32`
+              or `torch.float16` depending on `return_dtype`.
+            - If `return_numpy` is True: a NumPy array of shape `(N, D)` and dtype `np.float32` or `np.float16`.
+            `N` is the total number of input sequences and `D` is the embedding dimensionality produced by the model.
+    
+    Raises:
+        AssertionError:
+            If `return_dtype` is not one of `"float32"` or `"float16"`.
+        RuntimeError:
+            If the model returns `None` for embeddings (indicates incorrect forward flags or model behavior).
+        ValueError:
+            If the model returns an embedding tensor with unexpected dimensionality or if `pooling` is unsupported.
+    
+    Notes:
+        - The function uses `pad_and_mask` to produce `x` (LongTensor) and `mask` (BoolTensor). Padding tokens
+          are ignored by pooling operations.
+        - When `pooling="weighted_mean"`, if `token_ids` are not available or the model returns a 2-D tensor,
+          the function falls back to masked mean pooling.
+        - Periodic saving concatenates all embeddings collected so far and writes them with `np.save`. Save
+          failures are caught and reported when `verbose=True` but do not abort processing.
+        - The function runs the model under `torch.no_grad()` and sets `model.eval()`; it will move the model
+          to `device` if provided.
+        - For reproducible numeric behavior across devices, ensure the model and device support the requested
+          autocast dtype (bfloat16) and that any randomness is controlled externally.
+    
+    Example:
+        >>> # simple usage
+        >>> embs = get_embeddings_bf16(model, sequences, seq_len=1024, batch_size=32, pooling="mean",
+        ...                           normalize=True, return_dtype="float32", return_numpy=False)
+    """
+
     assert return_dtype in ("float32", "float16"), "return_dtype must be 'float32' or 'float16'"
 
     model_device = next(model.parameters()).device if device is None else device
@@ -948,31 +1100,32 @@ def get_embeddings_bf16(
     if verbose:
         tqdm.tqdm.write(
             f"[get_embeddings_bf16] sequences={len(sequences)}, batch_size={batch_size}, "
-            f"batches={total_batches}, device={model_device}, seq_len={seq_len}"
+            f"batches={total_batches}, device={model_device}, seq_len={seq_len}, pooling={pooling}"
         )
+        
+    # Prepare autocast context using torch.amp.autocast
+    autocast_ctx = None
+    if use_bfloat16:
+        try:
+            autocast_ctx = torch.amp.autocast(device_type=model_device.type, dtype=torch.bfloat16)
+        except Exception:
+            try:
+                autocast_ctx = torch.amp.autocast(device_type=model_device.type)
+            except Exception:
+                autocast_ctx = None
+    else:
+        try:
+            autocast_ctx = torch.amp.autocast(device_type=model_device.type)
+        except Exception:
+            autocast_ctx = None
 
-    with torch.no_grad():
+    with torch.inference_mode():
         batch_iter = range(0, len(sequences), batch_size)
-        pbar = tqdm.tqdm(batch_iter, disable=not verbose, total=total_batches, desc="Embedding batches")
+        pbar = tqdm.tqdm(batch_iter, disable=not show_progress_bar, total=total_batches, desc="Embedding batches")
         for batch_idx, i in enumerate(pbar):
             batch_seqs = sequences[i : i + batch_size]
             x, mask = pad_and_mask(batch_seqs, pad_idx=seq_pad_idx, seq_len=seq_len, device=model_device, verbose=verbose)
-
-            # Prepare autocast context using torch.amp.autocast
-            autocast_ctx = None
-            if use_bfloat16:
-                try:
-                    autocast_ctx = torch.amp.autocast(device_type=model_device.type, dtype=torch.bfloat16)
-                except Exception:
-                    try:
-                        autocast_ctx = torch.amp.autocast(device_type=model_device.type)
-                    except Exception:
-                        autocast_ctx = None
-            else:
-                try:
-                    autocast_ctx = torch.amp.autocast(device_type=model_device.type)
-                except Exception:
-                    autocast_ctx = None
+            # x: (B, L) LongTensor token ids, mask: (B, L) boolean
 
             # Run forward under autocast if available
             if autocast_ctx is not None:
@@ -992,6 +1145,9 @@ def get_embeddings_bf16(
                 # per-token embeddings: (B, L, D)
                 if pooling in ("mean", "auto"):
                     emb = masked_mean_pool(out, mask, dim=1, verbose=verbose)
+                elif pooling == "weighted_mean":
+                    # Use token ids to compute per-token weights; fallback to mean if token ids missing
+                    emb = masked_weighted_mean_pool(out, mask, token_ids=x, token_type_weights=token_type_weights, dim=1, verbose=verbose)
                 else:
                     raise ValueError(f"unsupported pooling: {pooling}")
             else:
