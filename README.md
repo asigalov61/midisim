@@ -346,7 +346,7 @@ fast_parallel_extract.fast_parallel_extract()
 
 ### Choose and prepare one midisim model and corresponding embeddings set
 
-#### Small model
+#### Small model (8 layers)
 
 ```python
 model_ckpt = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
@@ -355,7 +355,7 @@ model_depth = 8
 embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy'
 ```
 
-#### Large model
+#### Large model (16 layers)
 
 ```python
 model_ckpt = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
