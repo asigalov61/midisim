@@ -171,7 +171,7 @@ out_dir_path = midisim.copy_corpus_files(corpus_matches_list)
 
 ### Raw/custom use example
 
-#### Small model (2 epochs)
+#### Small model (8 layers - 2 epochs)
 
 ```python
 import torch
@@ -214,7 +214,7 @@ model.eval()
 autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ```
 
-#### Large model (2 epochs)
+#### Large model (16 layers - 2 epochs)
 
 ```python
 import torch
