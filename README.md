@@ -27,19 +27,43 @@
 
 ### For small pre-trained model
 
+#### Mean Pool Embeddings
+* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
+
 ```discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy``` - 37292 genre MIDIs embeddings for genre (artist and song) identification tasks
 
 ```discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
 
+#### Weighted Mean Pool Embeddings
+* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
+
+```discover_midi_dataset_37302_genre_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 37302 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
+
 ### For large pre-trained model
+
+#### Mean Pool Embeddings
+* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
 
 ```discover_midi_dataset_37303_genres_midis_embeddings_large_cc_by_nc_sa.npy``` - 37303 genre MIDIs embeddings for genre (artist and song) identification tasks
 
 ```discover_midi_dataset_202400_identified_midis_embeddings_large_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
+
+#### Weighted Mean Pool Embeddings
+* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
+
+```discover_midi_dataset_37287_genres_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 37287 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
@@ -514,4 +538,4 @@ for fa in tqdm.tqdm(filez):
 ***
 
 ### Project Los Angeles
-### Tegridy Code 2025
+### Tegridy Code 2026
