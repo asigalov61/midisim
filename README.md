@@ -129,7 +129,7 @@ corpus_midi_names, corpus_emb = midisim.load_embeddings(emb_path)
 model_path = midisim.download_model()
 
 # Option 2: Use main pre-trained midisim model included in midisim PyPI package
-# model_path = get_package_models()[0]['path']
+# model_path = midisim.get_package_models()[0]['path']
 
 # Load midisim model
 model, ctx, dtype = midisim.load_model(model_path)
