@@ -73,6 +73,8 @@
 
 ```midisim-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisim music discovery pipeline with both pre-trained models
 
+```midisim-similarity-search-output-samples-1-1-2-weighted-CC-BY-NC-SA.zip``` - ~366000 MIDIs indentified with weighted midisim music discovery pipeline with both pre-trained models
+
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
 ***
