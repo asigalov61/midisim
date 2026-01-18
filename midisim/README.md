@@ -27,19 +27,43 @@
 
 ### For small pre-trained model
 
+#### Mean Pool Embeddings
+* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
+
 ```discover_midi_dataset_37292_genres_midis_embeddings_cc_by_nc_sa.npy``` - 37292 genre MIDIs embeddings for genre (artist and song) identification tasks
 
 ```discover_midi_dataset_202400_identified_midis_embeddings_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
 
+#### Weighted Mean Pool Embeddings
+* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
+
+```discover_midi_dataset_37302_genre_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 37302 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
+
 ### For large pre-trained model
+
+#### Mean Pool Embeddings
+* These are standard general purpose embeddings which work best for comparing overall MIDI-to-MIDI similarity
 
 ```discover_midi_dataset_37303_genres_midis_embeddings_large_cc_by_nc_sa.npy``` - 37303 genre MIDIs embeddings for genre (artist and song) identification tasks
 
 ```discover_midi_dataset_202400_identified_midis_embeddings_large_cc_by_nc_sa.npy``` - 202400 identified MIDIs embeddings for MIDI identification tasks
 
 ```discover_midi_dataset_3480123_clean_midis_embeddings_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs embeddings for large scale similarity search and analysis tasks
+
+#### Weighted Mean Pool Embeddings
+* These embeddings work best for comparing MIDI-tp=MIDI music structure (MIDI pitches) similarity.
+
+```discover_midi_dataset_37287_genres_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 37287 genre MIDIs weighted embeddings for genre (artist and song) identification tasks
+
+```discover_midi_dataset_190032_identified_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 190032 identified MIDIs weighted embeddings for MIDI identification tasks
+
+```discover_midi_dataset_3480123_clean_midis_embeddings_1_1_2_weighted_large_cc_by_nc_sa.npy``` - 3480123 select clean MIDIs weighted embeddings for large scale similarity search and analysis tasks
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
@@ -48,6 +72,8 @@
 ### [Similarity search output samples](https://huggingface.co/datasets/projectlosangeles/midisim-samples)
 
 ```midisim-similarity-search-output-samples-CC-BY-NC-SA.zip``` - ~300000 MIDIs indentified with midisim music discovery pipeline with both pre-trained models
+
+```midisim-similarity-search-output-samples-1-1-2-weighted-CC-BY-NC-SA.zip``` - ~366000 MIDIs indentified with weighted midisim music discovery pipeline with both pre-trained models
 
 #### Source MIDI dataset: [Discover MIDI Dataset](https://huggingface.co/datasets/projectlosangeles/Discover-MIDI-Dataset)
 
@@ -133,7 +159,7 @@ idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
 idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
 
 # Print corpus matches (and optionally) convert the final result to a handy list for further processing
-corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+corpus_matches_list = midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
 
 # ================================================================================================
 # Copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
@@ -147,7 +173,7 @@ out_dir_path = midisim.copy_corpus_files(corpus_matches_list)
 
 ### Raw/custom use example
 
-#### Small model (2 epochs)
+#### Small model (8 layers - 2 epochs)
 
 ```python
 import torch
@@ -190,7 +216,7 @@ model.eval()
 autocast_ctx = torch.amp.autocast(device_type=DEVICE, dtype=DTYPE)
 ```
 
-#### Large model (2 epochs)
+#### Large model (16 layers - 2 epochs)
 
 ```python
 import torch
@@ -278,7 +304,7 @@ midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
 model, ctx, dtype = midisim.load_model(verbose=False)
 
 # Generate MIDI corpus embeddings
-midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens)
+midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens, verbose=False)
 
 # ================================================================================================
 
@@ -322,7 +348,7 @@ fast_parallel_extract.fast_parallel_extract()
 
 ### Choose and prepare one midisim model and corresponding embeddings set
 
-#### Small model
+#### Small model (8 layers)
 
 ```python
 model_ckpt = 'midisim_small_pre_trained_model_2_epochs_43117_steps_0.3148_loss_0.9229_acc.pth'
@@ -331,7 +357,7 @@ model_depth = 8
 embeddings_file = 'discover_midi_dataset_3480123_clean_midis_embeddings_cc_by_nc_sa.npy'
 ```
 
-#### Large model
+#### Large model (16 layers)
 
 ```python
 model_ckpt = 'midisim_large_pre_trained_model_2_epochs_86275_steps_0.2054_loss_0.9385_acc.pth'
@@ -393,10 +419,17 @@ for fa in tqdm.tqdm(filez):
         # ================================================================================================
         
         # Compute source/query embeddings
-        query_emb = midisim.get_embeddings_bf16(model, input_toks_seqs, verbose=False)
+        query_emb = midisim.get_embeddings_bf16(model,
+                                                input_toks_seqs,
+                                                verbose=False,
+                                                show_progress_bar=False
+                                               )
     
         # Calculate cosine similarity between source/query MIDI embeddings and embeddings corpus
-        idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb, verbose=False)
+        idxs, sims = midisim.cosine_similarity_topk(query_emb,
+													corpus_emb,
+													verbose=False
+												   )
        
         # ================================================================================================
         # Processs, print and save results
@@ -514,4 +547,4 @@ for fa in tqdm.tqdm(filez):
 ***
 
 ### Project Los Angeles
-### Tegridy Code 2025
+### Tegridy Code 2026
