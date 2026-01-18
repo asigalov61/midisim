@@ -157,7 +157,7 @@ idxs, sims = midisim.cosine_similarity_topk(query_emb, corpus_emb)
 idxs_sims_tvs_list = midisim.idxs_sims_to_sorted_list(idxs, sims)
 
 # Print corpus matches (and optionally) convert the final result to a handy list for further processing
-corpus_matches_list  midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
+corpus_matches_list = midisim.print_sorted_idxs_sims_list(idxs_sims_tvs_list, corpus_midi_names, return_as_list=True)
 
 # ================================================================================================
 # Copy matched MIDIs from the MIDI corpus for listening and further evaluation and analysis
