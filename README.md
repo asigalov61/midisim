@@ -302,7 +302,7 @@ midi_corpus_file_names, midi_corpus_tokens = map(list, zip(*sorted_midi_corpus))
 model, ctx, dtype = midisim.load_model(verbose=False)
 
 # Generate MIDI corpus embeddings
-midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens)
+midi_corpus_embeddings = midisim.get_embeddings_bf16(model, midi_corpus_tokens, verbose=False)
 
 # ================================================================================================
 
